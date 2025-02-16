@@ -27,11 +27,11 @@ class GetMainScreenDataInteractorImpl(
             }
 
             // Получаем количество удаленных серверов
-            val remoteServerCountResult = remoteServerRepository.getRemoteServers()
-            val remoteServerCount = when (remoteServerCountResult) {
-                is Result.Success -> remoteServerCountResult.data.size // Используем data.size для получения количества
-                is Result.Failure -> 0 // В случае ошибки получения серверов, считаем количество 0
-            }
+            val remoteServerCountResult = remoteServerRepository.getAllServers()
+            val remoteServerCount = 0 //when (remoteServerCountResult) {
+//                is Result.Success -> remoteServerCountResult.data.size // Используем data.size для получения количества
+//                is Result.Failure -> 0 // В случае ошибки получения серверов, считаем количество 0
+//            }
 
             // Получаем количество товаров
             val productCountResult = productRepository.getProducts(null) // filter = null, чтобы получить все товары

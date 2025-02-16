@@ -2,8 +2,12 @@ package com.synngate.twowaysync.data.source.local
 
 import com.synngate.twowaysync.data.common.Result
 import com.synngate.twowaysync.domain.model.RemoteServerDetails
+import kotlinx.coroutines.flow.Flow
 
 interface RemoteServerLocalDataSource {
-    suspend fun getRemoteServers(): Result<List<RemoteServerDetails>>
-    suspend fun insertRemoteServer(serverDetails: RemoteServerDetails): Result<Unit> // Unit - означает, что функция просто выполняет действие и не возвращает значения
+    suspend fun insert(server: RemoteServerDetails)
+    suspend fun update(server: RemoteServerDetails)
+    suspend fun delete(serverId: Int)
+    suspend fun getServer(serverId: Int): RemoteServerDetails?
+    fun getAllServers(): Flow<List<RemoteServerDetails>>
 }

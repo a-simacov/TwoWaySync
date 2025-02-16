@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,12 +21,10 @@ import com.synngate.twowaysync.ui.theme.TwoWaySyncTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemoteServerScreen(navController: NavHostController) {
-    val viewModel: RemoteServerScreenViewModel = viewModel( // <----  Создаем ViewModel через фабрику с зависимостями
-        factory = RemoteServerScreenViewModelFactory(
-            saveRemoteServerSettingsInteractor = FakeSaveRemoteServerSettingsInteractor(), // <----  Передаем заглушку интерактора
-            navController = navController // <----  Передаем NavController
-        )
-    )
+    val context = LocalContext.current
+    val factory = RemoteServerScreenViewModelFactory(context = context, navController = navController) // <----  Создаем фабрику, передавая Context и NavController
+    val viewModel: RemoteServerScreenViewModel = viewModel(factory = factory) // <----  Получаем ViewModel через фабрику
+
     val state by viewModel.state.collectAsState()
 
     Scaffold(

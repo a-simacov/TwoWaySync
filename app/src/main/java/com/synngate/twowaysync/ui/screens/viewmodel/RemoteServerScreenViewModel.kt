@@ -3,13 +3,13 @@ package com.synngate.twowaysync.ui.screens.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.synngate.twowaysync.data.model.RemoteServer
 import com.synngate.twowaysync.domain.interactors.SaveRemoteServerSettingsInteractor
+import com.synngate.twowaysync.domain.model.RemoteServerDetails
+import com.synngate.twowaysync.ui.screens.RemoteServerScreenState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.synngate.twowaysync.ui.screens.RemoteServerScreenState
 
 class RemoteServerScreenViewModel(
     private val saveRemoteServerSettingsInteractor: SaveRemoteServerSettingsInteractor, // <----  Интерактор как зависимость
@@ -94,10 +94,11 @@ class RemoteServerScreenViewModel(
             updatePassword(_state.value.password)
 
             //  Проверяем, есть ли ОШИБКИ - теперь проверяем на Пустую строку ""
-            val hasErrors = _state.value.serverNameError.isNotEmpty() || // <----  Проверка на .isNotEmpty() вместо != null
-                    _state.value.hostError.isNotEmpty() ||          // <----  Проверка на .isNotEmpty() вместо != null
-                    _state.value.portError.isNotEmpty() ||          // <----  Проверка на .isNotEmpty() вместо != null
-                    _state.value.passwordError.isNotEmpty()         // <----  Проверка на .isNotEmpty() вместо != null
+            val hasErrors =
+                _state.value.serverNameError.isNotEmpty() || // <----  Проверка на .isNotEmpty() вместо != null
+                        _state.value.hostError.isNotEmpty() ||          // <----  Проверка на .isNotEmpty() вместо != null
+                        _state.value.portError.isNotEmpty() ||          // <----  Проверка на .isNotEmpty() вместо != null
+                        _state.value.passwordError.isNotEmpty()         // <----  Проверка на .isNotEmpty() вместо != null
 
             if (!hasErrors) {
                 println("RemoteServerScreenViewModel: Форма валидна")
@@ -120,15 +121,16 @@ class RemoteServerScreenViewModel(
             if (validateForm()) { //  Валидируем форму перед сохранением
                 val currentState = _state.value //  Получаем текущее состояние UI
 
-                val remoteServer = RemoteServer( //  Создаем объект RemoteServer из состояния UI
-                    serverName = currentState.serverName,
-                    host = currentState.host,
-                    port = currentState.port.toInt(), // Преобразуем Port в Int
-                    authEndpoint = currentState.authEndpoint,
-                    echoEndpoint = currentState.echoEndpoint,
-                    username = currentState.username.takeIf { it.isNotBlank() }, //  username и password - только если не пустые
-                    password = currentState.password.takeIf { it.isNotBlank() }  //  .takeIf { it.isNotBlank() } вернет null, если строка пустая
-                )
+                val remoteServer =
+                    RemoteServerDetails( //  Создаем объект RemoteServer из состояния UI
+                        name = currentState.serverName,
+                        host = currentState.host,
+                        port = currentState.port.toInt(), // Преобразуем Port в Int
+                        authEndpoint = currentState.authEndpoint,
+                        echoEndpoint = currentState.echoEndpoint,
+                        username = currentState.username,//.takeIf { it.isNotBlank() }, //  username и password - только если не пустые
+                        password = currentState.password//.takeIf { it.isNotBlank() }  //  .takeIf { it.isNotBlank() } вернет null, если строка пустая
+                    )
 
                 saveRemoteServerSettingsInteractor.execute(remoteServer) // <----  Вызываем интерактор для сохранения
 

@@ -10,9 +10,9 @@ import com.synngate.twowaysync.data.source.local.dao.ProductDao
 import com.synngate.twowaysync.data.source.local.dao.RemoteServerDao
 import com.synngate.twowaysync.data.source.local.entity.LogDetailsEntity
 import com.synngate.twowaysync.data.source.local.entity.ProductDetailsEntity
-import com.synngate.twowaysync.data.source.local.entity.RemoteServerEntity
+import com.synngate.twowaysync.domain.model.RemoteServerDetails
 
-@Database(entities = [LogDetailsEntity::class, RemoteServerEntity::class, ProductDetailsEntity::class], version = 1)
+@Database(entities = [LogDetailsEntity::class, RemoteServerDetails::class, ProductDetailsEntity::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun logDao(): LogDao
