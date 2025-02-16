@@ -1,16 +1,17 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("kotlin-kapt")
 }
 
 android {
     namespace = "com.synngate.twowaysync"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.synngate.twowaysync"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -50,6 +51,22 @@ android {
 }
 
 dependencies {
+
+    // Room dependencies
+    implementation("androidx.room:room-runtime:2.6.1") // Замените "2.6.1" на последнюю стабильную версию Room
+    kapt("androidx.room:room-compiler:2.6.1")         // kapt для Kotlin annotation processing (для Room)
+    implementation("androidx.room:room-ktx:2.6.1")     // Kotlin extensions for coroutines and Flow (опционально, но полезно)
+
+    // Lifecycle для Room (если вы используете LiveData или ViewModel с Room) - опционально, но часто используется
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2") // Замените "2.6.2" на последнюю стабильную версию Lifecycle
+    implementation("androidx.lifecycle:lifecycle-common-java8:2.6.2")  // для поддержки Java 8
+
+    // Paging support for Room (если вам нужна постраничная загрузка данных из Room) - опционально
+    // implementation("androidx.room:room-paging:2.6.1") // Замените "2.6.1" на последнюю версию, если нужно Paging
+
+    // Testing support for Room (если вы будете писать тесты для Room) - опционально, для тестов
+    testImplementation("androidx.room:room-testing:2.6.1")   // Замените "2.6.1" на последнюю версию, если нужны тесты
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
