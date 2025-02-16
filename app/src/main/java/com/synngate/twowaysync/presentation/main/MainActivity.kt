@@ -28,13 +28,17 @@ import androidx.compose.ui.unit.dp
 import androidx.activity.viewModels // <---- ИМПОРТ: viewModels() для создания ViewModel
 import androidx.compose.material3.Scaffold
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
 import com.synngate.twowaysync.domain.model.MainScreenData
 import com.synngate.twowaysync.ui.screens.ChooseRemoteServerScreen
+import com.synngate.twowaysync.ui.screens.CommandsScreen
+import com.synngate.twowaysync.ui.screens.ConnectionScreen
 import com.synngate.twowaysync.ui.screens.RemoteServerCommandsScreen
 import com.synngate.twowaysync.ui.screens.RemoteServerConnectionScreen
 import com.synngate.twowaysync.ui.screens.RemoteServerScreen
@@ -109,30 +113,25 @@ fun TwoWaySyncApp() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "choose_server_screen") {
         composable("choose_server_screen") {
-            ChooseRemoteServerScreen(
-                onAddButtonClick = {
-                    navController.navigate("remote_server_screen")
-                },
-                onServerItemClick = { serverId ->
-                    println("Быстрое нажатие на сервер ID: $serverId - Перейти на экран подключения")
-                    navController.navigate("remote_server_connection_screen")
-                },
-                onServerItemLongClick = { serverId ->
-                    println("Долгое нажатие на сервер ID: $serverId - Перейти на экран команд")
-                    navController.navigate("remote_server_commands_screen")
-                }
-            )
+            ChooseRemoteServerScreen(navController)
         }
         composable("remote_server_screen") { // <----  composable для RemoteServerScreen
             RemoteServerScreen(navController = navController) // <----  Передаем NavController в RemoteServerScreen
         }
-        composable("remote_server_connection_screen") {
-            RemoteServerConnectionScreen()
+        composable(
+            route = "connection_screen/{serverId}", // <---- Маршрут для ConnectionScreen с параметром serverId
+            arguments = listOf(navArgument("serverId") { type = NavType.IntType }) // <---- Определение аргумента serverId
+        ) { backStackEntry ->
+            val serverId = backStackEntry.arguments?.getInt("serverId") // <---- Извлекаем serverId из аргументов
+            ConnectionScreen(serverId = serverId) // <---- Передаем serverId в ConnectionScreen
         }
-        composable("remote_server_commands_screen") {
-            RemoteServerCommandsScreen()
+        composable(
+            route = "commands_screen/{serverId}", // <---- Маршрут для CommandsScreen с параметром serverId
+            arguments = listOf(navArgument("serverId") { type = NavType.IntType }) // <---- Определение аргумента serverId
+        ) { backStackEntry ->
+            val serverId = backStackEntry.arguments?.getInt("serverId") // <---- Извлекаем serverId из аргументов
+            CommandsScreen(serverId = serverId) // <---- Передаем serverId в CommandsScreen
         }
-
     }
 }
 @Composable

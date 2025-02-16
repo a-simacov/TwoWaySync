@@ -1,9 +1,11 @@
 package com.synngate.twowaysync.ui.screens //  <----  Укажите ваш пакет для Compose UI экранов
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,117 +14,114 @@ import androidx.compose.material3.* // <----  Импорт material3 вмест�
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.synngate.twowaysync.domain.model.RemoteServerDetails
+import com.synngate.twowaysync.ui.screens.viewmodel.ChooseRemoteServerScreenViewModel
+import com.synngate.twowaysync.ui.screens.viewmodel.ChooseRemoteServerScreenViewModelFactory
 import com.synngate.twowaysync.ui.theme.TwoWaySyncTheme
+
+@Composable
+fun ChooseRemoteServerScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val factory = ChooseRemoteServerScreenViewModelFactory(context = context, navController = navController)
+    val viewModel: ChooseRemoteServerScreenViewModel = viewModel(factory = factory)
+
+    ChooseRemoteServerScreenContent(viewModel = viewModel, navController = navController)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChooseRemoteServerScreen(
-    onAddButtonClick: () -> Unit, // <----  Параметр обработчика кнопки "Add"
-    onServerItemClick: (serverId: Int) -> Unit, // <----  Добавляем параметр для обработки быстрого нажатия на элемент списка
-    onServerItemLongClick: (serverId: Int) -> Unit // <----  Добавляем параметр для обработки долгого нажатия на элемент списка
-) {
+fun ChooseRemoteServerScreenContent(viewModel: ChooseRemoteServerScreenViewModel, navController: NavHostController) {
+    val servers by viewModel.servers.collectAsState() // <---- Собираем StateFlow из ViewModel
+
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Choose remote server to connect") })
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddButtonClick) {
-                Icon(Icons.Filled.Add, "Add")
+            FloatingActionButton(onClick = {
+                navController.navigate("remote_server_screen") // <---- Навигация на RemoteServerScreen
+            }) {
+                Icon(Icons.Filled.Add, "Add server")
             }
         }
     ) { paddingValues ->
-        LazyColumn(contentPadding = paddingValues) {
-            val servers = listOf(
-                RemoteServerItem("Server 1", "host1", 1234, 1),
-                RemoteServerItem("Server 2", "host2", 5678, 2),
-                RemoteServerItem("Server 3", "host3", 9012, 3)
-            )
-
-            if (servers.isEmpty()) {
-                item {
-                    Text("Remote servers list is empty")
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            if (servers.isEmpty()) { // <---- Проверяем, есть ли серверы в списке
+                Text(
+                    text = "Список серверов пуст. Добавьте сервер.", // <---- Сообщение, если список пуст
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
             } else {
-                items(servers) { server ->
-                    ServerItem(
-                        server = server,
-                        onClick = { onServerItemClick(server.id) }, // <----  Вызываем onServerItemClick с ID сервера при быстром нажатии
-                        onLongClick = { onServerItemLongClick(server.id) } // <----  Вызываем onServerItemLongClick с ID сервера при долгом нажатии
-                    )
+                LazyColumn { // <---- Используем LazyColumn для отображения списка серверов
+                    items(servers) { server ->
+                        ServerItem(
+                            server = server,
+                            onServerItemClick = { serverId -> viewModel.onServerItemClick(serverId) }, // <---- Обработчик клика
+                            onServerItemLongClick = { serverId -> viewModel.onServerItemLongClick(serverId) } // <---- Обработчик долгого клика
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-data class RemoteServerItem(
-    val name: String,
-    val host: String,
-    val port: Int,
-    val id: Int
-)
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ServerItem(
-    server: RemoteServerItem,
-    onClick: () -> Unit, // <----  Добавляем параметр onClick: лямбда-функция без параметров и возвращаемого значения
-    onLongClick: () -> Unit // <----  Добавляем параметр onLongClick: лямбда-функция без параметров и возвращаемого значения
+    server: RemoteServerDetails,
+    onServerItemClick: (Int) -> Unit,
+    onServerItemLongClick: (Int) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .combinedClickable(
-                onClick = onClick, // <----  Передаем лямбду onClick в combinedClickable
-                onLongClick = onLongClick // <----  Передаем лямбду onLongClick в combinedClickable
+            .combinedClickable(  // <---- Заменили .clickable на .combinedClickable
+                onClick = { server.id?.let { onServerItemClick(it) } }, // <---- Обработка обычного клика остается
+                onLongClick = { server.id?.let { onServerItemLongClick(it) } } // <---- Добавили обработку долгого клика
             )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = server.name,
-                style = MaterialTheme.typography.titleMedium
+                text = server.name, // <---- Отображаем serverName
+                style = MaterialTheme.typography.headlineSmall
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Хост: ${server.host}:${server.port}",
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "ID: ${server.id}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            Text(
+                text = "${server.host}:${server.port}", // <---- Отображаем host и port
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun ChooseRemoteServerScreenPreview() {
-    val navController = rememberNavController() // <----  Создаем NavController для Preview
     TwoWaySyncTheme {
-        ChooseRemoteServerScreen(
-            onAddButtonClick = { // <----  Реализация onAddButtonClick для Preview - навигация к RemoteServerScreen
-                navController.navigate("remote_server_screen") //  Переход к RemoteServerScreen в Preview
-            },
-            onServerItemClick = { serverId -> // <----  Реализация onServerItemClick для Preview - навигация к RemoteServerConnectionScreen
-                println("Preview: Быстрое нажатие на сервер ID: $serverId") // Для Preview логируем действие
-                navController.navigate("remote_server_connection_screen") // Переход к RemoteServerConnectionScreen в Preview
-            },
-            onServerItemLongClick = { serverId -> // <----  Реализация onServerItemLongClick для Preview - навигация к RemoteServerCommandsScreen
-                println("Preview: Долгое нажатие на сервер ID: $serverId") // Для Preview логируем действие
-                navController.navigate("remote_server_commands_screen") // Переход к RemoteServerCommandsScreen в Preview
-            }
+        val navController = rememberNavController()
+        ChooseRemoteServerScreenContent(
+            viewModel = viewModel(), //  viewModel() без фабрики для Preview
+            navController = navController
         )
     }
 }
