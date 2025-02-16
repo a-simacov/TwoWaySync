@@ -52,6 +52,12 @@ android {
 
 dependencies {
 
+    // Navigation
+    implementation("androidx.navigation:navigation-compose:2.5.3")
+
+    // DataStore Preferences
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     // Room dependencies
     implementation("androidx.room:room-runtime:2.6.1") // Замените "2.6.1" на последнюю стабильную версию Room
     kapt("androidx.room:room-compiler:2.6.1")         // kapt для Kotlin annotation processing (для Room)

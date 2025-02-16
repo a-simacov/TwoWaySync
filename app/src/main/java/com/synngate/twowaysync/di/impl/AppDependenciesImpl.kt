@@ -1,6 +1,9 @@
 package com.synngate.twowaysync.di.impl
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import com.synngate.twowaysync.data.repository.LogRepository
 import com.synngate.twowaysync.data.repository.ProductRepository
 import com.synngate.twowaysync.data.repository.RemoteServerRepository
@@ -23,7 +26,13 @@ import com.synngate.twowaysync.domain.service.LocalWebServerService
 import com.synngate.twowaysync.domain.service.impl.LocalWebServerServiceImpl
 import com.synngate.twowaysync.presentation.main.MainScreenViewModel
 
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_preferences") // <---- DataStore instance
+
 class AppDependenciesImpl(private val appContext: Context) : AppDependencies { // <----  Реализация интерфейса AppDependencies
+
+    val dataStore: DataStore<Preferences> by lazy { // <----  Предоставляем DataStore как зависимость
+        appContext.dataStore
+    }
 
     private val database: AppDatabase by lazy { // Lazy инициализация базы данных
         AppDatabase.getDatabase(appContext)
@@ -67,8 +76,8 @@ class AppDependenciesImpl(private val appContext: Context) : AppDependencies { /
     }
 
     // Domain Layer - Managers implementations
-    private val remoteServerConnectionManager: RemoteServerConnectionManager by lazy {
-        RemoteServerConnectionManagerImpl() // Пока без зависимостей
+    val remoteServerConnectionManager: RemoteServerConnectionManager by lazy {
+        RemoteServerConnectionManagerImpl(dataStore) // <----  Передаем dataStore в конструктор
     }
 
     // Domain Layer - Services implementations

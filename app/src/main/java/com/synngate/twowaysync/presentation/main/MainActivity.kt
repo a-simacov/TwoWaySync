@@ -28,9 +28,16 @@ import androidx.compose.ui.unit.dp
 import androidx.activity.viewModels // <---- ИМПОРТ: viewModels() для создания ViewModel
 import androidx.compose.material3.Scaffold
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
 import com.synngate.twowaysync.domain.model.MainScreenData
+import com.synngate.twowaysync.ui.screens.ChooseRemoteServerScreen
+import com.synngate.twowaysync.ui.screens.RemoteServerCommandsScreen
+import com.synngate.twowaysync.ui.screens.RemoteServerConnectionScreen
+import com.synngate.twowaysync.ui.screens.RemoteServerScreen
 import com.synngate.twowaysync.ui.theme.TwoWaySyncTheme
 import com.synngate.twowaysync.util.LogHelper
 import kotlinx.coroutines.launch
@@ -55,6 +62,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+//        val remoteServerConnectionManager = MyApplication.appDependencies.provideRemoteServerConnectionManager()
+//        lifecycleScope.launch { // <----  Запускаем корутину для suspend функций
+//            remoteServerConnectionManager.setCurrentServerId(123) // <----  Сохраняем ID = 123
+//            val currentServerId = remoteServerConnectionManager.getCurrentServerId() // <----  Читаем ID
+//            Log.d("MainActivity", "Current Server ID from DataStore: $currentServerId") // <----  Логируем результат
+//
+//            remoteServerConnectionManager.setCurrentServerId(null) // <----  Сохраняем ID = null (отключаем сервер)
+//            val currentServerIdNull = remoteServerConnectionManager.getCurrentServerId() // <----  Читаем ID снова
+//            Log.d("MainActivity", "Current Server ID (after setting null): $currentServerIdNull") // <---- Логируем результат
+//        }
+
         // Программная запись лога при создании MainActivity
         lifecycleScope.launch {
             LogHelper.log("MainActivity created") // <----  Используем LogHelper для записи лога
@@ -68,11 +86,17 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        MainScreenContent( // <---- ИЗМЕНЕНИЕ: Передаем ViewModel в MainScreenContent
-                            name = "Android",
-                            modifier = Modifier.padding(innerPadding),
-                            mainScreenViewModel = mainScreenViewModel // <---- Передаем ViewModel
-                        )
+                        TwoWaySyncApp()
+//                        MainScreenContent( // <---- ИЗМЕНЕНИЕ: Передаем ViewModel в MainScreenContent
+//                            name = "Android",
+//                            modifier = Modifier.padding(innerPadding),
+//                            mainScreenViewModel = mainScreenViewModel // <---- Передаем ViewModel
+//                        )
+//                        ChooseRemoteServerScreen(
+//                            onAddButtonClick = { // <----  Передаем лямбду onAddButtonClick для Preview
+//                                println("Кнопка 'Add' нажата в Preview") //  Для Preview можно просто логирование
+//                            }
+//                        )
                     }
                 }
             }
@@ -80,6 +104,37 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun TwoWaySyncApp() {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "choose_server_screen") {
+        composable("choose_server_screen") {
+            ChooseRemoteServerScreen(
+                onAddButtonClick = {
+                    navController.navigate("remote_server_screen")
+                },
+                onServerItemClick = { serverId ->
+                    println("Быстрое нажатие на сервер ID: $serverId - Перейти на экран подключения")
+                    navController.navigate("remote_server_connection_screen")
+                },
+                onServerItemLongClick = { serverId ->
+                    println("Долгое нажатие на сервер ID: $serverId - Перейти на экран команд")
+                    navController.navigate("remote_server_commands_screen")
+                }
+            )
+        }
+        composable("remote_server_screen") { // <----  composable для RemoteServerScreen
+            RemoteServerScreen(navController = navController) // <----  Передаем NavController в RemoteServerScreen
+        }
+        composable("remote_server_connection_screen") {
+            RemoteServerConnectionScreen()
+        }
+        composable("remote_server_commands_screen") {
+            RemoteServerCommandsScreen()
+        }
+
+    }
+}
 @Composable
 fun MainScreenButton(text: String, onClick: () -> Unit) {
     Button(
@@ -162,7 +217,6 @@ fun MainScreenContent(name: String, modifier: Modifier = Modifier, mainScreenVie
 @Composable
 fun MainScreenContentPreview() {
     TwoWaySyncTheme {
-        // MainScreenContent("Android", getMainScreenDataInteractor = MyApplication.appDependencies.getMainScreenDataInteractor) // <---- УДАЛЕНО: Preview больше не работает так напрямую
-        Text("Main Screen Preview не реализован с ViewModel") // <---- Временное сообщение для Preview
+        TwoWaySyncApp()
     }
 }
