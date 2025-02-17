@@ -4,12 +4,10 @@ import com.synngate.twowaysync.data.common.Result
 import com.synngate.twowaysync.data.repository.RemoteServerRepository
 import com.synngate.twowaysync.domain.interactors.GetRemoteServerDetailsInteractor
 import com.synngate.twowaysync.domain.model.RemoteServerDetails
+import kotlinx.coroutines.flow.Flow
 
 class GetRemoteServerDetailsInteractorImpl(private val remoteServerRepository: RemoteServerRepository) : GetRemoteServerDetailsInteractor {
 
-    override suspend fun invoke(serverId: Int): Result<RemoteServerDetails> {
-        // Здесь может быть бизнес-логика получения деталей сервера, например, проверка прав доступа, логирование
-        // В текущей реализации просто заглушка - нужно будет реализовать получение деталей сервера
-        return Result.Failure(Exception("Not implemented yet - GetRemoteServerDetailsInteractorImpl")) // TODO: Реализовать получение деталей сервера
-    }
-}
+    override suspend fun execute(serverId: Int): Flow<RemoteServerDetails?> { // <---- Реализация метода execute()
+        return remoteServerRepository.getServer(serverId) // <---- Вызываем метод getServerById() репозитория и возвращаем Flow
+    }}

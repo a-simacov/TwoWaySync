@@ -8,6 +8,6 @@ interface RemoteServerLocalDataSource {
     suspend fun insert(server: RemoteServerDetails)
     suspend fun update(server: RemoteServerDetails)
     suspend fun delete(serverId: Int)
-    suspend fun getServer(serverId: Int): RemoteServerDetails?
+    suspend fun getServer(serverId: Int): Flow<RemoteServerDetails?>
     fun getAllServers(): Flow<List<RemoteServerDetails>>
 }

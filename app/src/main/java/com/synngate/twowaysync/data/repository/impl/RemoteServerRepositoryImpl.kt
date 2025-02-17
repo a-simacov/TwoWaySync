@@ -22,7 +22,7 @@ class RemoteServerRepositoryImpl(
         remoteServerLocalDataSource.delete(serverId) // <---- Используем LocalDataSource
     }
 
-    override suspend fun getServer(serverId: Int): RemoteServerDetails? {
+    override suspend fun getServer(serverId: Int): Flow<RemoteServerDetails?> {
         return remoteServerLocalDataSource.getServer(serverId) // <---- Используем LocalDataSource
     }
 

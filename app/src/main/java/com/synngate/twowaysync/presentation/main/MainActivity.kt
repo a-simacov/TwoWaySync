@@ -123,7 +123,7 @@ fun TwoWaySyncApp() {
             arguments = listOf(navArgument("serverId") { type = NavType.IntType }) // <---- Определение аргумента serverId
         ) { backStackEntry ->
             val serverId = backStackEntry.arguments?.getInt("serverId") // <---- Извлекаем serverId из аргументов
-            ConnectionScreen(serverId = serverId) // <---- Передаем serverId в ConnectionScreen
+            ConnectionScreen(navController = navController, serverId = serverId) // <---- Передаем serverId в ConnectionScreen
         }
         composable(
             route = "commands_screen/{serverId}", // <---- Маршрут для CommandsScreen с параметром serverId

@@ -23,7 +23,7 @@ class RemoteServerLocalDataSourceImpl(
         remoteServerDao.delete(serverId)
     }
 
-    override suspend fun getServer(serverId: Int): RemoteServerDetails? {
+    override suspend fun getServer(serverId: Int): Flow<RemoteServerDetails?> {
         return remoteServerDao.getServer(serverId)
     }
 

@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">TwoWaySync</string>
+    <string name="choose_server_screen_title">Выбор сервера</string>
+    <string name="add_server_button_label">Добавить сервер</string>
+    <string name="remote_server_screen_title">Настройки сервера</string>
+    <string name="server_name_hint">Имя сервера</string>
+    <string name="server_host_hint">Хост</string>
+    <string name="server_port_hint">Порт</string>
+    <string name="server_username_hint">Имя пользователя</string>
+    <string name="server_password_hint">Пароль</string>
+    <string name="server_description_hint">Описание</string>
+    <string name="save_button_label">Сохранить</string>
+    <string name="connection_screen_title">Подключение к серверу</string>
+    <string name="connection_server_name_label">Сервер</string>
+    <string name="connection_server_host_label">Хост</string>
+    <string name="connection_server_port_label">Порт</string>
+    <string name="connection_status_label">Статус</string>
+    <string name="connection_button_label">Подключиться</string>
 </resources>

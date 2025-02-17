@@ -20,7 +20,7 @@ interface RemoteServerDao {
     suspend fun delete(serverId: Int)
 
     @Query("SELECT * FROM remote_servers WHERE id = :serverId") // <---- Аннотация и запрос для getServer
-    suspend fun getServer(serverId: Int): RemoteServerDetails?
+    fun getServer(serverId: Int): Flow<RemoteServerDetails?>
 
     @Query("SELECT * FROM remote_servers") // <---- Аннотация и запрос для getAllServers
     fun getAllServers(): Flow<List<RemoteServerDetails>>
