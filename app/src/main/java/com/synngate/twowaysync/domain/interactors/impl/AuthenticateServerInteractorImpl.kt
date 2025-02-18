@@ -21,10 +21,10 @@ class AuthenticateServerInteractorImpl : AuthenticateServerInteractor { // <----
             val authRequest = AuthRequest(deviceId = deviceId) // <---- Создаем тело запроса AuthRequest
 
             val response = if (serverDetails.username.isNullOrBlank() || serverDetails.password.isNullOrBlank()) {
-                apiService.authenticate(authHeader = null, authRequest = authRequest) // <---- Если нет username/password, authHeader = null
+                apiService.echo()
             } else {
                 val credentials = Credentials.basic(serverDetails.username, serverDetails.password)
-                apiService.authenticate(authHeader = credentials, authRequest = authRequest) // <---- Если есть username/password, передаем Basic Credentials и тело запроса
+                apiService.echo()
             }
 
             if (response.isSuccessful) {

@@ -1,6 +1,8 @@
 package com.synngate.twowaysync.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.synngate.twowaysync.data.repository.LogRepository
 import com.synngate.twowaysync.data.repository.ProductRepository
 import com.synngate.twowaysync.data.repository.RemoteServerRepository
@@ -14,6 +16,9 @@ import com.synngate.twowaysync.presentation.main.MainScreenViewModel
 import com.synngate.twowaysync.util.LogHelper
 
 interface AppDependencies {
+
+    val dataStore: DataStore<Preferences>
+
     // Data Source Layer
     fun provideLogLocalDataSource(): LogLocalDataSource
     fun provideRemoteServerLocalDataSource(): RemoteServerLocalDataSource

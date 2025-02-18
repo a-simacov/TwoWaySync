@@ -30,7 +30,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 class AppDependenciesImpl(private val appContext: Context) : AppDependencies { // <----  Реализация интерфейса AppDependencies
 
-    val dataStore: DataStore<Preferences> by lazy { // <----  Предоставляем DataStore как зависимость
+    override val dataStore: DataStore<Preferences> by lazy { // <----  Предоставляем DataStore как зависимость
         appContext.dataStore
     }
 

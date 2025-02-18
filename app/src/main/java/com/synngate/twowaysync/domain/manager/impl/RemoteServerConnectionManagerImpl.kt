@@ -38,14 +38,13 @@ class RemoteServerConnectionManagerImpl(
         Log.d(TAG, "setCurrentServerId: serverId = $serverId") // <----  Логирование
 
         dataStore.edit { preferences ->
-            preferences[DataStoreKeys.CURRENT_SERVER_ID_KEY] = serverId?.toString() ?: "" // Сохраняем ID как строку
+            preferences[DataStoreKeys.CURRENT_SERVER_ID_KEY] = serverId ?: 0 // Сохраняем ID как строку
         }
     }
 
     override suspend fun getCurrentServerId(): Int? { // <----  Реализация getCurrentServerId
         val preferences = dataStore.data.first()
-        val serverIdString = preferences[DataStoreKeys.CURRENT_SERVER_ID_KEY] // Читаем ID как строку
-        val serverId = serverIdString?.toIntOrNull() // Преобразуем строку в Int?, может быть null
+        val serverId = preferences[DataStoreKeys.CURRENT_SERVER_ID_KEY] // Читаем ID как строку
         Log.d(TAG, "getCurrentServerId: serverId = $serverId") // <----  Логирование
         return serverId // Возвращаем Int?
     }

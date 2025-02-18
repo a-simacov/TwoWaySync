@@ -1,7 +1,11 @@
 package com.synngate.twowaysync.ui.screens.viewmodel
 
+import android.util.Log
+import androidx.datastore.preferences.core.edit
+import com.synngate.twowaysync.MyApplication // <----  Импорт MyApplication
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.AuthenticateServerInteractor
 import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
 import com.synngate.twowaysync.domain.interactors.GetRemoteServerDetailsInteractor
@@ -25,6 +29,7 @@ class ConnectionScreenViewModel(
     private val _connectionStatus = MutableStateFlow<String>("Ожидание подключения") // <---- StateFlow для статуса подключения
     val connectionStatus: StateFlow<String> = _connectionStatus.asStateFlow() // <---- Открытый StateFlow для UI
 
+    private val dataStore = MyApplication.appDependencies.dataStore // <---- Получаем DataStore статически
 
     fun loadServerDetails(serverId: Int) { // <---- Функция загрузки деталей сервера по ID
         viewModelScope.launch {
@@ -57,7 +62,23 @@ class ConnectionScreenViewModel(
                                     if (isAuthenticated) {
                                         _connectionStatus.value = "Подключено успешно" // <---- Обновляем статус на "Подключено успешно" после аутентификации
                                         println("ConnectionScreenViewModel: Аутентификация успешна. Подключение установлено.")
-                                        // TODO: Сохранить, что сервер является "текущим" (если нужно)
+
+                                        serverDetails.id?.let { serverIdToSave -> // <----  Получаем serverId из serverDetails и проверяем на null
+                                            viewModelScope.launch(Dispatchers.IO) { // <----  Запускаем корутину для фоновой операции DataStore
+                                                //  !!!  СОХРАНЕНИЕ ID СЕРВЕРА ЧЕРЕЗ DATastore НАПРЯМУЮ !!!
+                                                dataStore.edit { preferences -> // <----  Используем dataStore.edit для изменения Preferences
+                                                    preferences[CURRENT_SERVER_ID_KEY] = serverIdToSave // <----  Сохраняем serverId в DataStore
+                                                }
+                                                //  !!!  ИНТЕРАКТОР SetCurrentServerIdInteractor БОЛЬШЕ НЕ НУЖЕН !!!
+
+                                                //  Для отладки, логирование после сохранения
+                                                Log.d("ConnectionScreenViewModel", "ID сервера $serverIdToSave успешно сохранен в DataStore после подключения (НАПРЯМУЮ).")
+                                            }
+                                        } ?: run {
+                                            //  Если serverId по какой-то причине null, логирование ошибки
+                                            Log.e("ConnectionScreenViewModel", "Ошибка: serverId is null после успешного подключения, не удалось сохранить ID (НАПРЯМУЮ).")
+                                        }
+
                                     } else {
                                         _connectionStatus.value = "Ошибка: Аутентификация не удалась" // <---- Обновляем статус на "Ошибка: Аутентификация не удалась"
                                         println("ConnectionScreenViewModel: Аутентификация не удалась.")
