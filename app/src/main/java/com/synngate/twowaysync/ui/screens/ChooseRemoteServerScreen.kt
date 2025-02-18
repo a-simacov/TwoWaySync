@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -42,6 +43,9 @@ fun ChooseRemoteServerScreen(navController: NavHostController) {
 @Composable
 fun ChooseRemoteServerScreenContent(viewModel: ChooseRemoteServerScreenViewModel, navController: NavHostController) {
     val servers by viewModel.servers.collectAsState() // <---- Собираем StateFlow из ViewModel
+
+    val savedServerIdState = viewModel.savedServerIdState.collectAsStateWithLifecycle() // <---- Получаем savedServerIdState из ViewModel
+    val savedServerId = savedServerIdState.value // <---- Получаем значение State<Int?> в виде Int?
 
     Scaffold(
         topBar = {
@@ -74,6 +78,7 @@ fun ChooseRemoteServerScreenContent(viewModel: ChooseRemoteServerScreenViewModel
                     items(servers) { server ->
                         ServerItem(
                             server = server,
+                            savedServerId = savedServerId,
                             onServerItemClick = { serverId -> viewModel.onServerItemClick(serverId) }, // <---- Обработчик клика
                             onServerItemLongClick = { serverId -> viewModel.onServerItemLongClick(serverId) } // <---- Обработчик долгого клика
                         )
@@ -88,9 +93,17 @@ fun ChooseRemoteServerScreenContent(viewModel: ChooseRemoteServerScreenViewModel
 @Composable
 fun ServerItem(
     server: RemoteServerDetails,
+    savedServerId: Int?,
     onServerItemClick: (Int) -> Unit,
     onServerItemLongClick: (Int) -> Unit
 ) {
+    val isSelectedServer = server.id == savedServerId // <----  1. ОПРЕДЕЛЕНИЕ: Сравниваем server.serverId с savedServerId
+    val backgroundColor = if (isSelectedServer) { // <----  2. ВЫБОР ЦВЕТА: Проверяем isSelectedServer
+        MaterialTheme.colorScheme.secondaryContainer // <----  3a. ЦВЕТ ДЛЯ ВЫДЕЛЕННОГО: Если isSelectedServer == true, используем secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow // <----  3b. ЦВЕТ ДЛЯ НЕ ВЫДЕЛЕННОГО: Иначе (isSelectedServer == false), используем surfaceContainerLow
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -98,7 +111,8 @@ fun ServerItem(
             .combinedClickable(  // <---- Заменили .clickable на .combinedClickable
                 onClick = { server.id?.let { onServerItemClick(it) } }, // <---- Обработка обычного клика остается
                 onLongClick = { server.id?.let { onServerItemLongClick(it) } } // <---- Добавили обработку долгого клика
-            )
+            ),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(

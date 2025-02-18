@@ -52,6 +52,9 @@ android {
 
 dependencies {
 
+    // Lifecycle compose
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2") // или более поздняя версия
+
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0") // Или последняя стабильная версия
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Gson конвертер для Retrofit
