@@ -13,52 +13,63 @@ class ServerEditViewModel(
     private val serverRepository: ServerRepository
 ) : ViewModel() {
 
-    private val _serverName = MutableStateFlow("")
-    val serverName: StateFlow<String> = _serverName
+    private val _uiState = MutableStateFlow<ServerEditUiState>(ServerEditUiState.Initial)
+    val uiState: StateFlow<ServerEditUiState> = _uiState
 
-    private val _serverHost = MutableStateFlow("")
-    val serverHost: StateFlow<String> = _serverHost
-
-    private val _serverPort = MutableStateFlow(0)
-    val serverPort: StateFlow<Int> = _serverPort
-
+    private var isModified: Boolean = false
     private var serverId: Int? = null
 
     fun loadServer(id: Int) {
         viewModelScope.launch {
             val server = serverRepository.getServerById(id).firstOrNull()
             server?.let {
-                serverId = it.id
-                _serverName.value = it.name
-                _serverHost.value = it.host
-                _serverPort.value = it.port
+                serverId = it.id!!
+                _uiState.value = ServerEditUiState.Loaded(
+                    server = it,
+                    isActive = serverRepository.isActiveServer(it.id)
+                )
             }
         }
     }
 
     fun updateServerName(name: String) {
-        _serverName.value = name
+        isModified = true
+        val currentState = _uiState.value
+        if (currentState is ServerEditUiState.Loaded) {
+            _uiState.value = currentState.copy(
+                server = currentState.server.copy(name = name)
+            )
+        }
     }
 
     fun updateServerHost(host: String) {
-        _serverHost.value = host
+        isModified = true
+        val currentState = _uiState.value
+        if (currentState is ServerEditUiState.Loaded) {
+            _uiState.value = currentState.copy(
+                server = currentState.server.copy(host = host)
+            )
+        }
     }
 
     fun updateServerPort(port: Int) {
-        _serverPort.value = port
+        isModified = true
+        val currentState = _uiState.value
+        if (currentState is ServerEditUiState.Loaded) {
+            _uiState.value = currentState.copy(
+                server = currentState.server.copy(port = port)
+            )
+        }
     }
 
     fun saveServer() {
-        val name = _serverName.value.trim()
-        val host = _serverHost.value.trim()
-        val port = _serverPort.value
-        if (name.isEmpty() || host.isEmpty() || port == 0) return
-
-        viewModelScope.launch {
-            val server = ExternalServerEntity(id = serverId!!, name = name, host = host, port = port)
-            val savedId = serverRepository.saveServer(server)
-            if (serverId == null)
-                serverId = savedId//.toInt()
+        val currentState = _uiState.value
+        if (currentState is ServerEditUiState.Loaded) {
+            val server = currentState.server.copy(id = serverId)
+            viewModelScope.launch {
+                val savedId = serverRepository.saveServer(server)
+                if (serverId == null) serverId = savedId
+            }
         }
     }
 
@@ -71,9 +82,24 @@ class ServerEditViewModel(
     }
 
     fun setActiveServer() {
-        serverId?.let {
-            viewModelScope.launch {
-                serverRepository.setActiveServer(it)
+        val currentState = _uiState.value
+        if (currentState !is ServerEditUiState.Loaded || isModified) return
+
+        val server = currentState.server
+
+        _uiState.value = currentState.copy(isLoading = true, errorMessage = null)
+
+        viewModelScope.launch {
+            try {
+                val result = serverRepository.authenticateServer(server)
+                if (result.isSuccessful) {
+                    serverRepository.setActiveServer(serverId!!)
+                    _uiState.value = currentState.copy(isActive = true, isLoading = false)
+                } else {
+                    _uiState.value = currentState.copy(isLoading = false, errorMessage = "Auth failed")
+                }
+            } catch (e: Exception) {
+                _uiState.value = currentState.copy(isLoading = false, errorMessage = "Error: ${e.message}")
             }
         }
     }

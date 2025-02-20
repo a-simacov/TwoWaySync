@@ -14,8 +14,6 @@ import com.synngate.twowaysync.presentation.viewmodel.ServersListViewModel
 @Composable
 fun NavigationGraph(
     navController: NavHostController,
-    serversListViewModel: ServersListViewModel,
-    serverEditViewModel: ServerEditViewModel,
     modifier: Modifier = Modifier // Добавляем параметр
 ) {
     NavHost(
@@ -26,7 +24,6 @@ fun NavigationGraph(
         composable(Screen.ServersList.route) {
             ServersListScreen(
                 onNavigate = { event -> navController.handleEvent(event) },
-                viewModel = serversListViewModel,
                 onServerClick = { serverId ->
                     navController.handleEvent(
                         NavigationEvent.NavigateTo(
@@ -56,11 +53,9 @@ fun NavigationGraph(
 
             ServerEditScreen(
                 serverId = serverId,
-                viewModel = serverEditViewModel,
                 onSave = { },
                 onDelete = { navController.popBackStack() },
-                onBack = { navController.popBackStack() },
-                onSetActive = { serverId?.let { serverEditViewModel.setActiveServer() } }
+                onBack = { navController.popBackStack() }
             )
         }
         composable(Screen.Main.route) {

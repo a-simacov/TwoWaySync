@@ -39,21 +39,9 @@ class MainActivity : ComponentActivity() {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         val navController = rememberNavController()
 
-                        val serverRepository = (application as MyApp).serverRepository
-
-                        val serversListViewModel: ServersListViewModel = viewModel(
-                            factory = ServersListViewModelFactory(serverRepository)
-                        )
-
-                        val serverEditViewModel: ServerEditViewModel = viewModel(
-                            factory = ServerEditViewModelFactory(serverRepository)
-                        )
-
                         CompositionLocalProvider(LocalNavController provides navController) {
                             NavigationGraph(
                                 navController = navController,
-                                serversListViewModel = serversListViewModel,
-                                serverEditViewModel = serverEditViewModel,
                                 modifier = Modifier.padding(innerPadding)
                             )
                         }

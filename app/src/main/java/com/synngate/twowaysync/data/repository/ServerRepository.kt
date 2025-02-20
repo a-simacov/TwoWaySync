@@ -8,6 +8,7 @@ import com.synngate.twowaysync.data.remote.api.ApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import retrofit2.Response
 
 class ServerRepository(
     private val preferencesManager: PreferencesManager,
@@ -24,10 +25,15 @@ class ServerRepository(
     suspend fun checkServerStatus(): Boolean {
         val apiService = getActiveServerApi() ?: return false
         return try {
-            apiService.getServerStatus().status == "OK"
+            apiService.getServerStatus().isSuccessful
         } catch (e: Exception) {
             false
         }
+    }
+
+    suspend fun authenticateServer(server: ExternalServerEntity): Response<Unit> {
+        val api = apiServiceFactory.create("https://${server.host}:${server.port}")
+        return api.getServerStatus()
     }
 
     fun getServersFlow(): Flow<List<ExternalServerEntity>> =
@@ -35,6 +41,10 @@ class ServerRepository(
 
     fun getActiveServerIdFlow(): Flow<Int?> =
         preferencesManager.activeServerId
+
+    suspend fun isActiveServer(id: Int): Boolean {
+        return id == getActiveServerIdFlow().firstOrNull()
+    }
 
     suspend fun setActiveServer(serverId: Int) {
         preferencesManager.setActiveServerId(serverId)

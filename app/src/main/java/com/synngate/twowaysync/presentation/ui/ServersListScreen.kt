@@ -7,21 +7,27 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.synngate.twowaysync.MyApp
 import com.synngate.twowaysync.data.local.db.entities.ExternalServerEntity
 import com.synngate.twowaysync.presentation.navigation.NavigationEvent
 import com.synngate.twowaysync.presentation.viewmodel.ServersListViewModel
+import com.synngate.twowaysync.presentation.viewmodel.ServersListViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServersListScreen(
     onNavigate: (NavigationEvent) -> Unit,
-    viewModel: ServersListViewModel,
     onServerClick: (Int) -> Unit,
     onAddServerClick: () -> Unit,
     onContinueClick: () -> Unit,
     onExitClick: () -> Unit
 ) {
+    val serverRepository = (LocalContext.current.applicationContext as MyApp).serverRepository
+    val viewModel: ServersListViewModel = viewModel(factory = ServersListViewModelFactory(serverRepository))
+
     val servers by viewModel.servers.collectAsState()
     val activeServerId by viewModel.activeServerId.collectAsState()
 
@@ -41,7 +47,7 @@ fun ServersListScreen(
                     ServerItem(
                         server = server,
                         isActive = server.id == activeServerId,
-                        onClick = { onServerClick(server.id) }
+                        onClick = { onServerClick(server.id!!) }
                     )
                 }
             }
