@@ -2,7 +2,7 @@ package com.synngate.twowaysync.data.repository.impl
 
 import com.synngate.twowaysync.data.common.Result
 import com.synngate.twowaysync.data.repository.ProductRepository
-import com.synngate.twowaysync.data.source.local.ProductLocalDataSource
+import com.synngate.twowaysync.domain.interactors.impl.ProductLocalDataSource
 import com.synngate.twowaysync.domain.model.ProductDetails
 import com.synngate.twowaysync.domain.model.ProductFilter
 

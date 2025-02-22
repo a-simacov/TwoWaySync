@@ -1,19 +1,17 @@
 package com.synngate.twowaysync.di
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.synngate.twowaysync.data.repository.LogRepository
 import com.synngate.twowaysync.data.repository.ProductRepository
-import com.synngate.twowaysync.data.repository.RemoteServerRepository
+import com.synngate.twowaysync.data.repository.ExternalServerRepository
 import com.synngate.twowaysync.data.source.local.LogLocalDataSource
-import com.synngate.twowaysync.data.source.local.ProductLocalDataSource
-import com.synngate.twowaysync.data.source.local.RemoteServerLocalDataSource
+import com.synngate.twowaysync.domain.interactors.impl.ProductLocalDataSource
+import com.synngate.twowaysync.data.source.local.ExternalServerLocalDataSource
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
 import com.synngate.twowaysync.domain.manager.RemoteServerConnectionManager
 import com.synngate.twowaysync.domain.service.LocalWebServerService
-import com.synngate.twowaysync.presentation.main.MainScreenViewModel
-import com.synngate.twowaysync.util.LogHelper
+import com.synngate.twowaysync.ui.screens.main.MainScreenViewModel
 
 interface AppDependencies {
 
@@ -21,12 +19,12 @@ interface AppDependencies {
 
     // Data Source Layer
     fun provideLogLocalDataSource(): LogLocalDataSource
-    fun provideRemoteServerLocalDataSource(): RemoteServerLocalDataSource
+    fun provideRemoteServerLocalDataSource(): ExternalServerLocalDataSource
     fun provideProductLocalDataSource(): ProductLocalDataSource
 
     // Data Repository Layer
     fun provideLogRepository(): LogRepository
-    fun provideRemoteServerRepository(): RemoteServerRepository
+    fun provideRemoteServerRepository(): ExternalServerRepository
     fun provideProductRepository(): ProductRepository
 
     // Domain Layer - Interactors

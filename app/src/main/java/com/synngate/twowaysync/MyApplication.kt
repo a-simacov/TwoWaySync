@@ -18,6 +18,8 @@ class MyApplication : Application() {
         appDependencies = AppDependenciesImpl(this)
 
         // Синхронная инициализация LogHelper с использованием runBlocking  <----  ИЗМЕНЕНО НА runBlocking
+        // todo это плохой способ блокирования, но приходится так делать, т.к. он не успевает
+        // инициализироваться, а его уже используют
         runBlocking {
             LogHelper.init(appDependencies.provideLogRepository()) // Инициализация LogHelper
         }

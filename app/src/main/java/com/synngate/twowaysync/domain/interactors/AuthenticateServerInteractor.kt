@@ -1,8 +1,8 @@
 package com.synngate.twowaysync.domain.interactors
 
-import com.synngate.twowaysync.domain.model.RemoteServerDetails
+import com.synngate.twowaysync.domain.model.ExternalServer
 import kotlinx.coroutines.flow.Flow
 
 interface AuthenticateServerInteractor { // <---- Интерфейс AuthenticateServerInteractor
-    fun execute(serverDetails: RemoteServerDetails): Flow<Boolean> // <---- Метод execute, принимающий RemoteServerDetails и возвращающий Flow<Boolean>
+    fun execute(serverDetails: ExternalServer): Flow<Boolean> // <---- Метод execute, принимающий RemoteServerDetails и возвращающий Flow<Boolean>
 }

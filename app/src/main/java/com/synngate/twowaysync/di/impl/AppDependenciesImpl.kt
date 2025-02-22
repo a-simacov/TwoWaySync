@@ -6,16 +6,16 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.synngate.twowaysync.data.repository.LogRepository
 import com.synngate.twowaysync.data.repository.ProductRepository
-import com.synngate.twowaysync.data.repository.RemoteServerRepository
+import com.synngate.twowaysync.data.repository.ExternalServerRepository
 import com.synngate.twowaysync.data.repository.impl.LogRepositoryImpl
 import com.synngate.twowaysync.data.repository.impl.ProductRepositoryImpl
-import com.synngate.twowaysync.data.repository.impl.RemoteServerRepositoryImpl
+import com.synngate.twowaysync.data.repository.impl.ExternalServerRepositoryImpl
 import com.synngate.twowaysync.data.source.local.LogLocalDataSource
-import com.synngate.twowaysync.data.source.local.ProductLocalDataSource
-import com.synngate.twowaysync.data.source.local.RemoteServerLocalDataSource
+import com.synngate.twowaysync.domain.interactors.impl.ProductLocalDataSource
+import com.synngate.twowaysync.data.source.local.ExternalServerLocalDataSource
 import com.synngate.twowaysync.data.source.local.impl.LogLocalDataSourceImpl
 import com.synngate.twowaysync.data.source.local.impl.ProductLocalDataSourceImpl
-import com.synngate.twowaysync.data.source.local.impl.RemoteServerLocalDataSourceImpl
+import com.synngate.twowaysync.data.source.local.impl.ExternalServerLocalDataSourceImpl
 import com.synngate.twowaysync.di.AppDependencies
 import com.synngate.twowaysync.domain.db.AppDatabase
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
@@ -24,86 +24,78 @@ import com.synngate.twowaysync.domain.manager.RemoteServerConnectionManager
 import com.synngate.twowaysync.domain.manager.impl.RemoteServerConnectionManagerImpl
 import com.synngate.twowaysync.domain.service.LocalWebServerService
 import com.synngate.twowaysync.domain.service.impl.LocalWebServerServiceImpl
-import com.synngate.twowaysync.presentation.main.MainScreenViewModel
+import com.synngate.twowaysync.ui.screens.main.MainScreenViewModel
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_preferences") // <---- DataStore instance
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_preferences")
 
-class AppDependenciesImpl(private val appContext: Context) : AppDependencies { // <----  Реализация интерфейса AppDependencies
+class AppDependenciesImpl(private val appContext: Context) : AppDependencies {
 
-    override val dataStore: DataStore<Preferences> by lazy { // <----  Предоставляем DataStore как зависимость
+    override val dataStore: DataStore<Preferences> by lazy {
         appContext.dataStore
     }
 
-    private val database: AppDatabase by lazy { // Lazy инициализация базы данных
+    private val database: AppDatabase by lazy {
         AppDatabase.getDatabase(appContext)
     }
 
-    // Data Source Layer implementations
     private val logLocalDataSource: LogLocalDataSource by lazy {
         LogLocalDataSourceImpl(database.logDao())
     }
 
-    private val remoteServerLocalDataSource: RemoteServerLocalDataSource by lazy {
-        RemoteServerLocalDataSourceImpl(database.remoteServerDao())
+    private val externalServerLocalDataSource: ExternalServerLocalDataSource by lazy {
+        ExternalServerLocalDataSourceImpl(database.externalServerDao())
     }
 
     private val productLocalDataSource: ProductLocalDataSource by lazy {
         ProductLocalDataSourceImpl(database.productDao())
     }
 
-    // Data Repository Layer implementations
     private val logRepository: LogRepository by lazy {
         LogRepositoryImpl(logLocalDataSource)
     }
 
-    private val remoteServerRepository: RemoteServerRepository by lazy {
-        RemoteServerRepositoryImpl(remoteServerLocalDataSource)
+    private val externalServerRepository: ExternalServerRepository by lazy {
+        ExternalServerRepositoryImpl(externalServerLocalDataSource)
     }
 
     private val productRepository: ProductRepository by lazy {
         ProductRepositoryImpl(productLocalDataSource)
     }
 
-    // Domain Layer - Interactors implementations
     private val getMainScreenDataInteractor: GetMainScreenDataInteractor by lazy {
         GetMainScreenDataInteractorImpl(
-            logRepository, // <----  LogRepository
-            remoteServerRepository, // <----  RemoteServerRepository
-            productRepository, // <----  ProductRepository
+            logRepository,
+            externalServerRepository,
+            productRepository,
             remoteServerConnectionManager,
             localWebServerService
         )
     }
 
-    // Domain Layer - Managers implementations
     val remoteServerConnectionManager: RemoteServerConnectionManager by lazy {
-        RemoteServerConnectionManagerImpl(dataStore) // <----  Передаем dataStore в конструктор
+        RemoteServerConnectionManagerImpl(dataStore)
     }
 
-    // Domain Layer - Services implementations
     private val localWebServerService: LocalWebServerService by lazy {
-        LocalWebServerServiceImpl() // Пока без зависимостей и контекста
+        LocalWebServerServiceImpl()
     }
 
     // Presentation Layer - ViewModels implementations
-    override fun getMainScreenViewModel(): MainScreenViewModel { // <----  Реализация метода интерфейса getMainScreenViewModel()
+    override fun getMainScreenViewModel(): MainScreenViewModel {
         return MainScreenViewModel(getMainScreenDataInteractor)
     }
 
     // Data Source Layer
     override fun provideLogLocalDataSource(): LogLocalDataSource = logLocalDataSource
-    override fun provideRemoteServerLocalDataSource(): RemoteServerLocalDataSource = remoteServerLocalDataSource
+    override fun provideRemoteServerLocalDataSource(): ExternalServerLocalDataSource = externalServerLocalDataSource
     override fun provideProductLocalDataSource(): ProductLocalDataSource = productLocalDataSource
 
     // Data Repository Layer
     override fun provideLogRepository(): LogRepository = logRepository
-    override fun provideRemoteServerRepository(): RemoteServerRepository = remoteServerRepository
+    override fun provideRemoteServerRepository(): ExternalServerRepository = externalServerRepository
     override fun provideProductRepository(): ProductRepository = productRepository
 
     // Domain Layer - Interactors
-//    override fun provideGetLogCountInteractor(): GetLogCountInteractor = getLogCountInteractor
-//    override fun provideGetRemoteServerCountInteractor(): GetRemoteServerCountInteractor = getRemoteServerCountInteractor
-//    override fun provideGetProductCountInteractor(): GetProductCountInteractor = getProductCountInteractor
     override fun provideGetMainScreenDataInteractor(): GetMainScreenDataInteractor = getMainScreenDataInteractor
 
     // Domain Layer - Managers

@@ -9,7 +9,7 @@ import java.time.ZoneId
 
 object LogHelper {
 
-    private const val TAG = "LogHelper" // <---- Добавим TAG для логов LogHelper
+    private const val TAG = "LogHelper"
 
     private lateinit var logRepository: LogRepository
 
@@ -19,7 +19,7 @@ object LogHelper {
 
     suspend fun log(message: String) {
         if (!::logRepository.isInitialized) {
-            android.util.Log.e(TAG, "LogHelper is not initialized! Call LogHelper.init(logRepository) first.")
+            Log.e(TAG, "LogHelper is not initialized! Call LogHelper.init(logRepository) first.")
             return
         }
         val logDetails = LogDetails(
@@ -29,16 +29,10 @@ object LogHelper {
             dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()), ZoneId.systemDefault())
         )
 
-        // Добавляем логирование ВОКРУГ вызова insertLog с использованием android.util.Log
-        Log.d(TAG, "LogHelper.log() - Before calling insertLog: message = $message") // <---- ЛОГ ПЕРЕД ВЫЗОВОМ
-
         try {
             logRepository.insertLog(logDetails) // <----  РАСКОММЕНТИРОВАЛИ ВЫЗОВ insertLog
-            Log.d(TAG, "LogHelper.log() - Call successfull insertLog: message = $message") // <---- ЛОГ ПОСЛЕ УСПЕШНОГО ВЫЗОВА
         } catch (e: Exception) {
             Log.e(TAG, "LogHelper.log() - Error on calling insertLog: message = $message", e) // <---- ЛОГ В СЛУЧАЕ ОШИБКИ
         }
-
-        Log.d(TAG, "LogHelper.log() - After call (or attempt to call) insertLog: message = $message") // <---- ЛОГ ПОСЛЕ БЛОКА try-catch
     }
 }

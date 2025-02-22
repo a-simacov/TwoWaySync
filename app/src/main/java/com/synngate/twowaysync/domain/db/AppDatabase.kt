@@ -1,4 +1,4 @@
-package com.synngate.twowaysync.domain.db // <----  ОБЯЗАТЕЛЬНО проверьте и исправьте пакет, если у вас другой!
+package com.synngate.twowaysync.domain.db
 
 import android.content.Context
 import androidx.room.Database
@@ -7,30 +7,30 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.synngate.twowaysync.data.source.local.dao.LogDao
 import com.synngate.twowaysync.data.source.local.dao.ProductDao
-import com.synngate.twowaysync.data.source.local.dao.RemoteServerDao
+import com.synngate.twowaysync.data.source.local.dao.ExternalServerDao
 import com.synngate.twowaysync.data.source.local.entity.LogDetailsEntity
 import com.synngate.twowaysync.data.source.local.entity.ProductDetailsEntity
-import com.synngate.twowaysync.domain.model.RemoteServerDetails
+import com.synngate.twowaysync.domain.model.ExternalServer
 
-@Database(entities = [LogDetailsEntity::class, RemoteServerDetails::class, ProductDetailsEntity::class], version = 1)
+@Database(entities = [LogDetailsEntity::class, ExternalServer::class, ProductDetailsEntity::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun logDao(): LogDao
-    abstract fun remoteServerDao(): RemoteServerDao
+    abstract fun externalServerDao(): ExternalServerDao
     abstract fun productDao(): ProductDao
 
-    companion object { // <----  Добавляем companion object для статического метода
+    companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase { // <----  Реализация статического метода getDatabase(Context)
+        fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "app_database" // <----  Имя вашей базы данных
+                    "app_database"
                 )
-                    .fallbackToDestructiveMigration() //  Стратегия миграции (для примера - удаление и пересоздание)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
