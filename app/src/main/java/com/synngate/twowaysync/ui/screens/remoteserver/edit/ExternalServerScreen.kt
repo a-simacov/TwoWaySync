@@ -35,7 +35,7 @@ fun ExternalServerScreen(
 ) {
     val viewModel: ExternalServerScreenViewModel = viewModel(factory = factory)
 
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
 
     LaunchedEffect(serverId) {
@@ -141,10 +141,30 @@ fun ExternalServerScreen(
             )
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { viewModel.setActive() }
+                onClick = { viewModel.toggleActiveStatus() }
             ) {
-                Text("Активный")
+                Text(text = state.isActiveText)
             }
+        }
+    }
+}
+
+interface ActiveServerButton {
+
+    @Composable
+    fun Show(modifier: Modifier, onClick: () -> Unit)
+
+    class IsActive : ActiveServerButton {
+        @Composable
+        override fun Show(modifier: Modifier, onClick: () -> Unit) {
+
+        }
+    }
+
+    class IsNotActive : ActiveServerButton {
+        @Composable
+        override fun Show(modifier: Modifier, onClick: () -> Unit) {
+
         }
     }
 }

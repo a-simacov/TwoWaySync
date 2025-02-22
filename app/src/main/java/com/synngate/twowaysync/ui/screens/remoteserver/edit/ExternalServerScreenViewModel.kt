@@ -28,19 +28,19 @@ class ExternalServerScreenViewModel(
     private val navController: NavHostController
 ) : ViewModel() {
 
-    private var server = ExternalServer(name = "", host = "", port = 0)
+    private var currentServer: ExternalServer = ExternalServer(name = "", host = "", port = 0)
 
-    private val _state = MutableStateFlow(ExternalServerState())
-    val state: StateFlow<ExternalServerState> = _state.asStateFlow()
+    private val _uiState = MutableStateFlow(ExternalServerUiState())
+    val uiState: StateFlow<ExternalServerUiState> = _uiState.asStateFlow()
 
-    private val _connectionStatus = MutableStateFlow("Ожидание подключения")
-    val connectionStatus: StateFlow<String> = _connectionStatus.asStateFlow()
+    private val _connectionStatus = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Idle)
+    val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus.asStateFlow()
 
     private val dataStore = MyApplication.appDependencies.dataStore
 
     fun updateName(name: String) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(
+        updateUiState { currentState ->
+            currentState.copy(
                 serverName = name,
                 serverNameError = if (name.isBlank()) "Имя сервера не может быть пустым" else ""
             )
@@ -48,8 +48,8 @@ class ExternalServerScreenViewModel(
     }
 
     fun updateHost(host: String) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(
+        updateUiState { currentState ->
+            currentState.copy(
                 host = host,
                 hostError = if (host.isBlank()) "Хост не может быть пустым" else ""
             )
@@ -57,9 +57,9 @@ class ExternalServerScreenViewModel(
     }
 
     fun updatePort(port: String) {
-        viewModelScope.launch {
+        updateUiState { currentState ->
             val portNumber = port.toIntOrNull()
-            _state.value = _state.value.copy(
+            currentState.copy(
                 port = port,
                 portError = when {
                     port.isBlank() -> "Порт не может быть пустым"
@@ -74,81 +74,118 @@ class ExternalServerScreenViewModel(
     fun save() {
         viewModelScope.launch {
             if (validateForm()) {
-                val currentState = _state.value
+                val currentState = _uiState.value
 
-                val server = ExternalServer(
-                    id = server.id,
+                val serverToSave = ExternalServer(
+                    id = currentServer.id,
                     name = currentState.serverName,
                     host = currentState.host,
                     port = currentState.port.toInt()
                 )
 
-                val serverId = saveExternalServerInteractor.execute(server)
-                _state.value = _state.value.copy( id = serverId)
+                val serverId = saveExternalServerInteractor.execute(serverToSave)
+                updateUiState { it.copy(id = serverId) }
             }
         }
     }
 
+    private suspend fun isCurrentServerActive(): Boolean {
+        val preferences = dataStore.data.first()
+        val savedServerId = preferences[CURRENT_SERVER_ID_KEY]
+        return savedServerId == currentServer.id
+    }
+
     fun load(serverId: Int) {
         if (serverId == -1) return
+
         viewModelScope.launch {
             getExternalServerInteractor.execute(serverId).collect { serverDetails ->
                 if (serverDetails == null) return@collect
-                server = serverDetails.copy()
-                _state.value = ExternalServerState(
-                    id = serverDetails.id!!,
-                    serverName = serverDetails.name,
-                    host = serverDetails.host,
-                    port = serverDetails.port.toString()
-                )
+                currentServer = serverDetails.copy()
+
+                val isActive = isCurrentServerActive()
+
+                updateUiState {
+                    ExternalServerUiState(
+                        id = serverDetails.id!!,
+                        serverName = serverDetails.name,
+                        host = serverDetails.host,
+                        port = serverDetails.port.toString(),
+                        isActive = isActive,
+                        isActiveText = getActiveStatusText(isActive)
+                    )
+                }
             }
         }
     }
 
     fun delete() {
         viewModelScope.launch {
-            deleteExternalServerInteractor.execute(server)
+            deleteExternalServerInteractor.execute(currentServer)
             navController.popBackStack()
         }
     }
 
-    fun setActive() {
+    fun toggleActiveStatus() {
         viewModelScope.launch {
-            val preferences = dataStore.data.first()
-            val savedServerId = preferences[CURRENT_SERVER_ID_KEY]
-            val currentServerId = server.id!!
-            dataStore.edit { preferences ->
-                preferences[CURRENT_SERVER_ID_KEY] =
-                    if (savedServerId == currentServerId) -1 else currentServerId
+            val isActive = isCurrentServerActive()
+            updateUiState {
+                it.copy(
+                    isActive = !isActive,
+                    isActiveText = getActiveStatusText(!isActive)
+                )
+            }
+
+            dataStore.edit { prefs ->
+                prefs[CURRENT_SERVER_ID_KEY] = if (isActive) -1 else currentServer.id!!
             }
         }
     }
 
     fun testConnection() {
         viewModelScope.launch {
-            _connectionStatus.value = "Подключение..."
+            _connectionStatus.value = ConnectionStatus.Connecting
             delay(1000)
             withContext(Dispatchers.IO) {
-                checkServerAvailabilityInteractor.execute(server)
+                checkServerAvailabilityInteractor.execute(currentServer)
                     .collect { isAvailable ->
-                        if (isAvailable)
-                            _connectionStatus.value = "Сервер доступен."
-                        else
-                            _connectionStatus.value = "Ошибка: Сервер недоступен"
+                        _connectionStatus.value = if (isAvailable) {
+                            ConnectionStatus.Success
+                        } else {
+                            ConnectionStatus.Error("Ошибка: Сервер недоступен")
+                        }
                     }
             }
         }
     }
 
     private fun validateForm(): Boolean {
-        viewModelScope.launch {
-            updateName(_state.value.serverName)
-            updateHost(_state.value.host)
-            updatePort(_state.value.port)
-        }
+        updateName(_uiState.value.serverName)
+        updateHost(_uiState.value.host)
+        updatePort(_uiState.value.port)
 
-        return _state.value.serverNameError.isEmpty() &&
-                _state.value.hostError.isEmpty() &&
-                _state.value.portError.isEmpty()
+        return _uiState.value.serverNameError.isEmpty() &&
+                _uiState.value.hostError.isEmpty() &&
+                _uiState.value.portError.isEmpty()
     }
+
+    private fun updateUiState(update: (ExternalServerUiState) -> ExternalServerUiState) {
+        _uiState.value = update(_uiState.value)
+    }
+
+    private fun getActiveStatusText(isActive: Boolean): String =
+        "Активный: ${if (isActive) "ДА" else "НЕТ"}"
+}
+
+sealed class ConnectionStatus(val text: String) {
+
+    override fun toString() = text
+
+    object Idle : ConnectionStatus(text = "Ожидание подключения")
+
+    object Connecting : ConnectionStatus(text = "Подключение...")
+
+    object Success : ConnectionStatus(text = "Сервер доступен")
+
+    data class Error(val message: String) : ConnectionStatus(text = message)
 }
