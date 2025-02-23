@@ -40,9 +40,7 @@ fun MainScreen(
     val mainScreenDataState: MainScreenData by mainScreenViewModel.mainScreenDataState.collectAsState()
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Главный экран") })
-        },
+        topBar = { TopAppBar(title = { Text("Главный экран") }) },
         bottomBar = {
             MainScreenButton(
                 text = "Закрыть",
@@ -56,7 +54,8 @@ fun MainScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -66,7 +65,7 @@ fun MainScreen(
             ) {
                 MainScreenButton(
                     text = "Логи: ${mainScreenDataState.logCount}",
-                    onClick = { /* TODO: Обработка нажатия кнопки "Логи" */ }
+                    onClick = { navController.navigate("logs_screen") }
                 )
                 MainScreenButton(
                     text = "Серверы: ${mainScreenDataState.remoteServerCount}",

@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -21,9 +20,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.synngate.twowaysync.MyApplication
-import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
+import com.synngate.twowaysync.ui.screens.logs.LogsScreen
+import com.synngate.twowaysync.ui.screens.logs.LogsScreenViewModelFactory
 import com.synngate.twowaysync.ui.screens.main.MainScreen
-import com.synngate.twowaysync.ui.screens.main.MainScreenViewModel
 import com.synngate.twowaysync.ui.screens.main.MainScreenViewModelFactory
 import com.synngate.twowaysync.ui.screens.remoteserver.edit.ExternalServerScreen
 import com.synngate.twowaysync.ui.screens.remoteserver.edit.ExternalServerScreenViewModelFactory
@@ -74,8 +73,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TwoWaySyncApp() {
     val context = LocalContext.current
-
     val navController = rememberNavController()
+
     NavHost(navController = navController, startDestination = "servers_screen") {
         composable("servers_screen") {
             val factory = ExternalServersScreenViewModelFactory(
@@ -107,6 +106,12 @@ fun TwoWaySyncApp() {
             val factory = MainScreenViewModelFactory(getMainScreenDataInteractor)
 
             MainScreen(factory = factory, navController = navController)
+        }
+        composable("logs_screen") {
+            val factory =
+                LogsScreenViewModelFactory(context = context, navController = navController)
+
+            LogsScreen(factory = factory, navController = navController)
         }
     }
 }

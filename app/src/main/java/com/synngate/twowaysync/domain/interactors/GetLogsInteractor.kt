@@ -1,9 +1,9 @@
 package com.synngate.twowaysync.domain.interactors
 
-import com.synngate.twowaysync.data.common.Result
-import com.synngate.twowaysync.domain.model.LogDetails
 import com.synngate.twowaysync.domain.common.LogFilter
+import com.synngate.twowaysync.domain.model.LogDetails
+import kotlinx.coroutines.flow.Flow
 
 interface GetLogsInteractor {
-    suspend fun invoke(filter: LogFilter?): Result<List<LogDetails>>
+    suspend fun execute(filter: LogFilter?): Flow<List<LogDetails>>
 }
