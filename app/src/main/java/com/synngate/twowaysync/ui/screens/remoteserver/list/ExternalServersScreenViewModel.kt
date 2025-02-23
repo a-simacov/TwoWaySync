@@ -1,11 +1,12 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.list
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
-import com.synngate.twowaysync.domain.interactors.GetExternalServersInteractor // <---- Импорт GetRemoteServersInteractor
+import com.synngate.twowaysync.domain.interactors.GetExternalServersInteractor
 import com.synngate.twowaysync.domain.model.ExternalServer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +24,9 @@ class ExternalServersScreenViewModel(
     private val _servers = MutableStateFlow<List<ExternalServer>>(emptyList())
     val servers: StateFlow<List<ExternalServer>> = _servers.asStateFlow()
 
+    private val _serversUi = MutableStateFlow<List<ServerUi>>(listOf(ServerUi.Empty))
+    val serversUi: StateFlow<List<ServerUi>> = _serversUi.asStateFlow()
+
     private val dataStore = MyApplication.appDependencies.dataStore
 
     val activeServerIdState: StateFlow<Int> = dataStore.data
@@ -37,13 +41,16 @@ class ExternalServersScreenViewModel(
 
     init {
         loadServers()
+        Log.d("slax", "VM init happened")
     }
 
     private fun loadServers() {
+        Log.d("slax", "VM loadServers happened")
         viewModelScope.launch {
             getExternalServersInteractor.execute()
                 .collect { serverList ->
-                    _servers.value = serverList
+                    val uiList = serverList.map { }
+                    _servers.value = serverList // uiList
                 }
         }
     }

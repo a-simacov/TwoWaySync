@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,12 +25,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.synngate.twowaysync.domain.model.ExternalServer
+import com.synngate.twowaysync.ui.screens.main.MainScreenButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,11 +45,7 @@ fun ExternalServersScreen(
     val activeServerIdState = viewModel.activeServerIdState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Список внешних серверов") }
-            )
-        },
+        topBar = { TopAppBar(title = { Text("Список внешних серверов") }) },
         floatingActionButton = { NewExternalServerButton(navController = navController) }
     ) { paddingValues ->
         Column(
@@ -86,15 +81,11 @@ fun ExternalServersScreen(
                     }
                 }
             }
-            Button(
+            MainScreenButton(
+                text = "Продолжить",
                 onClick = { navController.navigate("main_screen") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
                 enabled = activeServerIdState.value >= 0
-            ) {
-                Text(text = "Продолжить")
-            }
+            )
         }
     }
 }
@@ -102,7 +93,7 @@ fun ExternalServersScreen(
 @Composable
 fun NewExternalServerButton(navController: NavHostController, modifier: Modifier = Modifier) {
     FloatingActionButton(
-        modifier = Modifier.padding(bottom = 64.dp),
+        modifier = Modifier.padding(bottom = 80.dp),
         onClick = { navController.navigate("server_screen/-1")}
     ) {
         Icon(Icons.Filled.Add, "Add server")
@@ -141,6 +132,44 @@ fun ExternalServerItem(
             Text(
                 text = "${server.host}:${server.port}",
                 style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+interface ServerUi {
+
+    @Composable
+    fun Show(modifier: Modifier, onClick: () -> Unit)
+
+    class IsActive : ServerUi {
+
+        @Composable
+        override fun Show(modifier: Modifier, onClick: () -> Unit) {
+
+        }
+    }
+
+    class IsNotActive : ServerUi {
+
+        @Composable
+        override fun Show(modifier: Modifier, onClick: () -> Unit) {
+
+        }
+    }
+
+    object Empty : ServerUi {
+
+        @Composable
+        override fun Show(modifier: Modifier, onClick: () -> Unit) {
+            Text(
+                text = "Список пуст.\nДобавьте сервер для продолжения работы.",
+                modifier = modifier
+                    .fillMaxWidth()
+                    //.weight(1f)
+                    .padding(16.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium
             )
         }
     }
