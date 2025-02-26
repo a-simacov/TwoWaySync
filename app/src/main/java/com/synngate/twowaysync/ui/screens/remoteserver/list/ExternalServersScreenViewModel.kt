@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.GetExternalServersInteractor
 import com.synngate.twowaysync.domain.model.ExternalServer
@@ -19,7 +18,7 @@ import kotlinx.coroutines.launch
 
 class ExternalServersScreenViewModel(
     private val getExternalServersInteractor: GetExternalServersInteractor,
-    private val navController: NavHostController,
+    //private val navController: NavHostController,
     private val dataStore: DataStore<Preferences>
 ) : ViewModel() {
 
@@ -53,9 +52,5 @@ class ExternalServersScreenViewModel(
                     _servers.value = serverList // uiList
                 }
         }
-    }
-
-    fun onServerItemClick(serverId: Int) {
-        navController.navigate("server_screen/$serverId")
     }
 }

@@ -22,20 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import com.synngate.twowaysync.R
 import com.synngate.twowaysync.ui.screens.main.MainScreenButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExternalServerScreen(
-    factory: ExternalServerScreenViewModelFactory,
-    navController: NavHostController,
-    serverId: Int
+    viewModel: ExternalServerScreenViewModel,
+    serverId: Int,
+    onClickDelete: () -> Unit,
+    onClickClose: () -> Unit
 ) {
-    val viewModel: ExternalServerScreenViewModel = viewModel(factory = factory)
-
     val state by viewModel.uiState.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
 
@@ -53,7 +50,7 @@ fun ExternalServerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp, start = 8.dp, end = 8.dp),
-                onClick = { navController.popBackStack() }
+                onClick = { onClickClose.invoke() }
             )
         }
     ) { paddingValues ->
@@ -121,10 +118,12 @@ fun ExternalServerScreen(
             MainScreenButton(
                 text = "Удалить",
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { viewModel.delete() }
+                onClick = {
+                    viewModel.delete()
+                    onClickDelete()
+                }
             )
             HorizontalDivider(
-                //modifier = Modifier.padding(vertical = 8.dp),
                 thickness = 4.dp
             )
             MainScreenButton(

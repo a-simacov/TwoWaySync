@@ -24,8 +24,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.synngate.twowaysync.domain.model.MainScreenData
 import com.synngate.twowaysync.services.ExternalServerCheckService
 
@@ -35,16 +33,16 @@ private val MainScreenStatusBottomPadding = 24.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    factory: MainScreenViewModelFactory,
-    navController: NavController
+    viewModel: MainScreenViewModel,
+    onCloseClick: () -> Unit,
+    onLogsClick: () -> Unit
 ) {
 
-    val mainScreenViewModel: MainScreenViewModel = viewModel(factory = factory)
-    val mainScreenDataState: MainScreenData by mainScreenViewModel.mainScreenDataState.collectAsState()
+    val mainScreenDataState: MainScreenData by viewModel.mainScreenDataState.collectAsState()
 
-    val serviceStatus by mainScreenViewModel.serviceRunningStateFlow.collectAsStateWithLifecycle()
-    val lastStatus by mainScreenViewModel.serverStatusFlow.collectAsStateWithLifecycle()
-    val lastTime by mainScreenViewModel.serverCheckTimeFlow.collectAsStateWithLifecycle()
+    val serviceStatus by viewModel.serviceRunningStateFlow.collectAsStateWithLifecycle()
+    val lastStatus by viewModel.serverStatusFlow.collectAsStateWithLifecycle()
+    val lastTime by viewModel.serverCheckTimeFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     Scaffold(
@@ -55,7 +53,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp, start = 8.dp, end = 8.dp),
-                onClick = { navController.popBackStack() }
+                onClick = { onCloseClick.invoke() }
             )
         }
     ) { paddingValues ->
@@ -73,7 +71,7 @@ fun MainScreen(
             ) {
                 MainScreenButton(
                     text = "Логи: ${mainScreenDataState.logCount}",
-                    onClick = { navController.navigate("logs_screen") }
+                    onClick = { onLogsClick.invoke() }
                 )
                 MainScreenButton(
                     text = "Серверы: ${mainScreenDataState.remoteServerCount}",
@@ -86,7 +84,7 @@ fun MainScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 8.dp)
                 MainScreenButton(
                     onClick = {
-                        mainScreenViewModel.startService {
+                        viewModel.startService {
                             Intent(context, ExternalServerCheckService::class.java).also {
                                 it.action =
                                     ExternalServerCheckService.ACTION_START_FOREGROUND_SERVICE
@@ -99,7 +97,7 @@ fun MainScreen(
                 )
                 MainScreenButton(
                     onClick = {
-                        mainScreenViewModel.stopService {
+                        viewModel.stopService {
                             Intent(context, ExternalServerCheckService::class.java).also {
                                 it.action =
                                     ExternalServerCheckService.ACTION_STOP_FOREGROUND_SERVICE

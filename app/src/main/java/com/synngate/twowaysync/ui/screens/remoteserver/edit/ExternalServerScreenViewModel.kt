@@ -5,7 +5,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
 import com.synngate.twowaysync.domain.interactors.DeleteExternalServerInteractor
@@ -27,7 +26,6 @@ class ExternalServerScreenViewModel(
     private val saveExternalServerInteractor: SaveExternalServerInteractor,
     private val deleteExternalServerInteractor: DeleteExternalServerInteractor,
     private val dataStore: DataStore<Preferences>,
-    private val navController: NavHostController
 ) : ViewModel() {
 
     private var currentServer: ExternalServer = ExternalServer(name = "", host = "", port = 0)
@@ -122,7 +120,6 @@ class ExternalServerScreenViewModel(
     fun delete() {
         viewModelScope.launch {
             deleteExternalServerInteractor.execute(currentServer)
-            navController.popBackStack()
         }
     }
 

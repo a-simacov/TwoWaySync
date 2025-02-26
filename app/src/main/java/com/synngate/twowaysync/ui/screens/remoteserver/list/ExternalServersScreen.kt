@@ -27,26 +27,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import com.synngate.twowaysync.domain.model.ExternalServer
 import com.synngate.twowaysync.ui.screens.main.MainScreenButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExternalServersScreen(
-    factory: ExternalServersScreenViewModelFactory,
-    navController: NavHostController
+    viewModel: ExternalServersScreenViewModel,
+    onServerItemClick: (Int) -> Unit,
+    onNewItemClick: () -> Unit,
+    onContinueClick: () -> Unit
 ) {
-    val viewModel: ExternalServersScreenViewModel = viewModel(factory = factory)
-
     val servers by viewModel.servers.collectAsState()
-
     val activeServerIdState = viewModel.activeServerIdState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Список внешних серверов") }) },
-        floatingActionButton = { NewExternalServerButton(navController = navController) }
+        floatingActionButton = { NewExternalServerButton(onNewItemClick) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -76,14 +73,14 @@ fun ExternalServersScreen(
                         ExternalServerItem(
                             server = server,
                             savedServerId = activeServerIdState.value,
-                            onServerItemClick = { serverId -> viewModel.onServerItemClick(serverId) },
+                            onServerItemClick = { serverId -> onServerItemClick(serverId) },
                         )
                     }
                 }
             }
             MainScreenButton(
                 text = "Продолжить",
-                onClick = { navController.navigate("main_screen") },
+                onClick = { onContinueClick.invoke() },
                 enabled = activeServerIdState.value >= 0
             )
         }
@@ -91,10 +88,10 @@ fun ExternalServersScreen(
 }
 
 @Composable
-fun NewExternalServerButton(navController: NavHostController, modifier: Modifier = Modifier) {
+fun NewExternalServerButton(onNewItemClick: () -> Unit, modifier: Modifier = Modifier) {
     FloatingActionButton(
         modifier = Modifier.padding(bottom = 80.dp),
-        onClick = { navController.navigate("server_screen/-1")}
+        onClick = { onNewItemClick.invoke() }
     ) {
         Icon(Icons.Filled.Add, "Add server")
     }

@@ -44,7 +44,7 @@ class MainScreenViewModel(
         loadMainScreenData()
     }
 
-    fun loadMainScreenData() {
+    private fun loadMainScreenData() {
         viewModelScope.launch {
             val result = getMainScreenDataInteractor.invoke()
             when (result) {
