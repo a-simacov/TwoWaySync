@@ -1,6 +1,8 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.list
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
@@ -15,7 +17,8 @@ import com.synngate.twowaysync.domain.interactors.impl.GetExternalServersInterac
 
 class ExternalServersScreenViewModelFactory(
     private val context: Context,
-    private val navController: NavHostController
+    private val navController: NavHostController,
+    private val dataStore: DataStore<Preferences>
 ) : ViewModelProvider.Factory {
 
     private val externalServerDao = AppDatabase.getDatabase(context).externalServerDao()
@@ -36,7 +39,8 @@ class ExternalServersScreenViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return ExternalServersScreenViewModel(
                 getExternalServersInteractor = getExternalServersInteractor,
-                navController = navController
+                navController = navController,
+                dataStore = dataStore
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

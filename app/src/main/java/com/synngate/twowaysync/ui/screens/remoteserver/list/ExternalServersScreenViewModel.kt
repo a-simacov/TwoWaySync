@@ -1,10 +1,11 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.list
 
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.GetExternalServersInteractor
 import com.synngate.twowaysync.domain.model.ExternalServer
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
 
 class ExternalServersScreenViewModel(
     private val getExternalServersInteractor: GetExternalServersInteractor,
-    private val navController: NavHostController
+    private val navController: NavHostController,
+    private val dataStore: DataStore<Preferences>
 ) : ViewModel() {
 
     private val _servers = MutableStateFlow<List<ExternalServer>>(emptyList())
@@ -26,8 +28,6 @@ class ExternalServersScreenViewModel(
 
     private val _serversUi = MutableStateFlow<List<ServerUi>>(listOf(ServerUi.Empty))
     val serversUi: StateFlow<List<ServerUi>> = _serversUi.asStateFlow()
-
-    private val dataStore = MyApplication.appDependencies.dataStore
 
     val activeServerIdState: StateFlow<Int> = dataStore.data
         .map { preferences ->

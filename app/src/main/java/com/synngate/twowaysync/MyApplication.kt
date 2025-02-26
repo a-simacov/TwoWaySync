@@ -8,10 +8,10 @@ import kotlinx.coroutines.runBlocking
 
 class MyApplication : Application() {
 
-    companion object {
+    //companion object {
         lateinit var appDependencies: AppDependencies
             private set
-    }
+    //}
 
     override fun onCreate() {
         super.onCreate()

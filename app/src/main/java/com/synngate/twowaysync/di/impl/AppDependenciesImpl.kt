@@ -4,27 +4,26 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.synngate.twowaysync.data.repository.ExternalServerRepository
 import com.synngate.twowaysync.data.repository.LogRepository
 import com.synngate.twowaysync.data.repository.ProductRepository
-import com.synngate.twowaysync.data.repository.ExternalServerRepository
+import com.synngate.twowaysync.data.repository.impl.ExternalServerRepositoryImpl
 import com.synngate.twowaysync.data.repository.impl.LogRepositoryImpl
 import com.synngate.twowaysync.data.repository.impl.ProductRepositoryImpl
-import com.synngate.twowaysync.data.repository.impl.ExternalServerRepositoryImpl
-import com.synngate.twowaysync.data.source.local.LogLocalDataSource
-import com.synngate.twowaysync.domain.interactors.impl.ProductLocalDataSource
 import com.synngate.twowaysync.data.source.local.ExternalServerLocalDataSource
+import com.synngate.twowaysync.data.source.local.LogLocalDataSource
+import com.synngate.twowaysync.data.source.local.impl.ExternalServerLocalDataSourceImpl
 import com.synngate.twowaysync.data.source.local.impl.LogLocalDataSourceImpl
 import com.synngate.twowaysync.data.source.local.impl.ProductLocalDataSourceImpl
-import com.synngate.twowaysync.data.source.local.impl.ExternalServerLocalDataSourceImpl
 import com.synngate.twowaysync.di.AppDependencies
 import com.synngate.twowaysync.domain.db.AppDatabase
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
 import com.synngate.twowaysync.domain.interactors.impl.GetMainScreenDataInteractorImpl
+import com.synngate.twowaysync.domain.interactors.impl.ProductLocalDataSource
 import com.synngate.twowaysync.domain.manager.RemoteServerConnectionManager
 import com.synngate.twowaysync.domain.manager.impl.RemoteServerConnectionManagerImpl
 import com.synngate.twowaysync.domain.service.LocalWebServerService
 import com.synngate.twowaysync.domain.service.impl.LocalWebServerServiceImpl
-import com.synngate.twowaysync.ui.screens.main.MainScreenViewModel
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_preferences")
 
@@ -81,9 +80,9 @@ class AppDependenciesImpl(private val appContext: Context) : AppDependencies {
     }
 
     // Presentation Layer - ViewModels implementations
-    override fun getMainScreenViewModel(): MainScreenViewModel {
-        return MainScreenViewModel(getMainScreenDataInteractor)
-    }
+//    override fun getMainScreenViewModel(): MainScreenViewModel {
+//        return MainScreenViewModel(getMainScreenDataInteractor, checkServerAvailabilityInteractor = )
+//    }
 
     // Data Source Layer
     override fun provideLogLocalDataSource(): LogLocalDataSource = logLocalDataSource

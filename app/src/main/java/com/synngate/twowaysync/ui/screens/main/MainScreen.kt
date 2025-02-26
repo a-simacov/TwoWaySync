@@ -19,13 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.synngate.twowaysync.domain.model.MainScreenData
 
-private val MainScreenVerticalPadding = 16.dp
-private val MainScreenTitleBottomPadding = 24.dp
 private val MainScreenButtonVerticalSpacing = 16.dp
 private val MainScreenStatusBottomPadding = 24.dp
 
@@ -77,6 +77,49 @@ fun MainScreen(
                 )
             }
 
+            val serviceStatus by mainScreenViewModel.serviceRunningStateFlow.collectAsStateWithLifecycle()
+            val lastStatus by mainScreenViewModel.serverStatusFlow.collectAsStateWithLifecycle()
+            val lastTime by mainScreenViewModel.serverCheckTimeFlow.collectAsStateWithLifecycle()
+            val context = LocalContext.current
+
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .padding(16.dp),
+//                horizontalAlignment = Alignment.CenterHorizontally,
+//                verticalArrangement = Arrangement.Center
+//            ) {
+//                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+//                    Button(
+//                        onClick = {
+//                            mainScreenViewModel.startService { // Передаем лямбду для запуска сервиса
+//                                Intent(context, ExternalServerCheckService::class.java).also {
+//                                    it.action = ExternalServerCheckService.ACTION_START_SERVICE
+//                                    context.startService(it)
+//                                }
+//                            }
+//                        },
+//                        enabled = !serviceStatus
+//                    ) {
+//                        Text("Запустить сервис")
+//                    }
+//
+//                    Button(
+//                        onClick = {
+//                            mainScreenViewModel.stopService { // Передаем лямбду для остановки сервиса
+//                                Intent(context, ExternalServerCheckService::class.java).also {
+//                                    it.action = ExternalServerCheckService.ACTION_STOP_SERVICE
+//                                    context.startService(it) // Используем startService для остановки через Intent Action
+//                                }
+//                            }
+//                        },
+//                        enabled = serviceStatus
+//                    ) {
+//                        Text("Остановить сервис")
+//                    }
+//                }
+//            }
+
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
@@ -88,7 +131,7 @@ fun MainScreen(
                         text = "Удаленный сервер:",
                         style = MaterialTheme.typography.titleMedium
                     )
-                    Text(text = mainScreenDataState.remoteServerStatus)
+                    Text(text = "Запущен: $lastStatus -> $lastTime")
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
@@ -105,9 +148,9 @@ fun MainScreen(
 @Composable
 fun MainScreenButton(
     text: String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,

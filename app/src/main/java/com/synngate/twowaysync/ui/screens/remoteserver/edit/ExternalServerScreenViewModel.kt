@@ -1,10 +1,11 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.edit
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
 import com.synngate.twowaysync.domain.interactors.DeleteExternalServerInteractor
@@ -25,6 +26,7 @@ class ExternalServerScreenViewModel(
     private val checkServerAvailabilityInteractor: CheckServerAvailabilityInteractor,
     private val saveExternalServerInteractor: SaveExternalServerInteractor,
     private val deleteExternalServerInteractor: DeleteExternalServerInteractor,
+    private val dataStore: DataStore<Preferences>,
     private val navController: NavHostController
 ) : ViewModel() {
 
@@ -35,8 +37,6 @@ class ExternalServerScreenViewModel(
 
     private val _connectionStatus = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Idle)
     val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus.asStateFlow()
-
-    private val dataStore = MyApplication.appDependencies.dataStore
 
     fun updateName(name: String) {
         updateUiState { currentState ->
@@ -99,18 +99,18 @@ class ExternalServerScreenViewModel(
         if (serverId == -1) return
 
         viewModelScope.launch {
-            getExternalServerInteractor.execute(serverId).collect { serverDetails ->
-                if (serverDetails == null) return@collect
-                currentServer = serverDetails.copy()
+            getExternalServerInteractor.execute(serverId).collect { externalServer ->
+                if (externalServer == null) return@collect
+                currentServer = externalServer.copy()
 
                 val isActive = isCurrentServerActive()
 
                 updateUiState {
                     ExternalServerUiState(
-                        id = serverDetails.id!!,
-                        serverName = serverDetails.name,
-                        host = serverDetails.host,
-                        port = serverDetails.port.toString(),
+                        id = externalServer.id!!,
+                        serverName = externalServer.name,
+                        host = externalServer.host,
+                        port = externalServer.port.toString(),
                         isActive = isActive,
                         isActiveText = getActiveStatusText(isActive)
                     )

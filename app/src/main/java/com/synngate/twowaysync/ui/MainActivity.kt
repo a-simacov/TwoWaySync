@@ -12,7 +12,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.synngate.twowaysync.MyApplication
+import com.synngate.twowaysync.services.ServerCheckDataStore
 import com.synngate.twowaysync.ui.screens.logs.LogsScreen
 import com.synngate.twowaysync.ui.screens.logs.LogsScreenViewModelFactory
 import com.synngate.twowaysync.ui.screens.main.MainScreen
@@ -74,12 +74,14 @@ class MainActivity : ComponentActivity() {
 fun TwoWaySyncApp() {
     val context = LocalContext.current
     val navController = rememberNavController()
+    val dataStore = (context.applicationContext as MyApplication).appDependencies.dataStore
 
     NavHost(navController = navController, startDestination = "servers_screen") {
         composable("servers_screen") {
             val factory = ExternalServersScreenViewModelFactory(
                 context = context,
-                navController = navController
+                navController = navController,
+                dataStore = dataStore
             )
 
             ExternalServersScreen(factory, navController)
@@ -90,7 +92,8 @@ fun TwoWaySyncApp() {
         ) { backStackEntry ->
             val factory = ExternalServerScreenViewModelFactory(
                 context = context,
-                navController = navController
+                navController = navController,
+                dataStore = dataStore
             )
             val serverId = backStackEntry.arguments?.getInt("serverId") ?: -1
 
@@ -102,8 +105,11 @@ fun TwoWaySyncApp() {
         }
         composable("main_screen") {
             val getMainScreenDataInteractor =
-                MyApplication.appDependencies.provideGetMainScreenDataInteractor()
-            val factory = MainScreenViewModelFactory(getMainScreenDataInteractor)
+                (context.applicationContext as MyApplication).appDependencies.provideGetMainScreenDataInteractor()
+            val serverCheckDataStore: ServerCheckDataStore =
+                ServerCheckDataStore(dataStore = dataStore)
+            val factory =
+                MainScreenViewModelFactory(getMainScreenDataInteractor, serverCheckDataStore)
 
             MainScreen(factory = factory, navController = navController)
         }
@@ -113,14 +119,5 @@ fun TwoWaySyncApp() {
 
             LogsScreen(factory = factory, navController = navController)
         }
-    }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenContentPreview() {
-    TwoWaySyncTheme {
-        TwoWaySyncApp()
     }
 }
