@@ -1,5 +1,6 @@
 package com.synngate.twowaysync.ui.screens.main
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.synngate.twowaysync.domain.model.MainScreenData
+import com.synngate.twowaysync.services.ExternalServerCheckService
 
 private val MainScreenButtonVerticalSpacing = 16.dp
 private val MainScreenStatusBottomPadding = 24.dp
@@ -38,6 +41,11 @@ fun MainScreen(
 
     val mainScreenViewModel: MainScreenViewModel = viewModel(factory = factory)
     val mainScreenDataState: MainScreenData by mainScreenViewModel.mainScreenDataState.collectAsState()
+
+    val serviceStatus by mainScreenViewModel.serviceRunningStateFlow.collectAsStateWithLifecycle()
+    val lastStatus by mainScreenViewModel.serverStatusFlow.collectAsStateWithLifecycle()
+    val lastTime by mainScreenViewModel.serverCheckTimeFlow.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Главный экран") }) },
@@ -75,50 +83,34 @@ fun MainScreen(
                     text = "Товары: ${mainScreenDataState.productCount}",
                     onClick = { /* TODO: Обработка нажатия кнопки "Товары" */ }
                 )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 8.dp)
+                MainScreenButton(
+                    onClick = {
+                        mainScreenViewModel.startService {
+                            Intent(context, ExternalServerCheckService::class.java).also {
+                                it.action =
+                                    ExternalServerCheckService.ACTION_START_FOREGROUND_SERVICE
+                                context.startService(it)
+                            }
+                        }
+                    },
+                    enabled = !serviceStatus,
+                    text = "Запустить сервис"
+                )
+                MainScreenButton(
+                    onClick = {
+                        mainScreenViewModel.stopService {
+                            Intent(context, ExternalServerCheckService::class.java).also {
+                                it.action =
+                                    ExternalServerCheckService.ACTION_STOP_FOREGROUND_SERVICE
+                                context.startService(it)
+                            }
+                        }
+                    },
+                    enabled = serviceStatus,
+                    text = "Остановить сервис"
+                )
             }
-
-            val serviceStatus by mainScreenViewModel.serviceRunningStateFlow.collectAsStateWithLifecycle()
-            val lastStatus by mainScreenViewModel.serverStatusFlow.collectAsStateWithLifecycle()
-            val lastTime by mainScreenViewModel.serverCheckTimeFlow.collectAsStateWithLifecycle()
-            val context = LocalContext.current
-
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(16.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Center
-//            ) {
-//                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-//                    Button(
-//                        onClick = {
-//                            mainScreenViewModel.startService { // Передаем лямбду для запуска сервиса
-//                                Intent(context, ExternalServerCheckService::class.java).also {
-//                                    it.action = ExternalServerCheckService.ACTION_START_SERVICE
-//                                    context.startService(it)
-//                                }
-//                            }
-//                        },
-//                        enabled = !serviceStatus
-//                    ) {
-//                        Text("Запустить сервис")
-//                    }
-//
-//                    Button(
-//                        onClick = {
-//                            mainScreenViewModel.stopService { // Передаем лямбду для остановки сервиса
-//                                Intent(context, ExternalServerCheckService::class.java).also {
-//                                    it.action = ExternalServerCheckService.ACTION_STOP_SERVICE
-//                                    context.startService(it) // Используем startService для остановки через Intent Action
-//                                }
-//                            }
-//                        },
-//                        enabled = serviceStatus
-//                    ) {
-//                        Text("Остановить сервис")
-//                    }
-//                }
-//            }
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -126,14 +118,14 @@ fun MainScreen(
                     .fillMaxWidth()
                     .padding(bottom = MainScreenStatusBottomPadding)
             ) {
-                Column(horizontalAlignment = Alignment.Start) {
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                     Text(
                         text = "Удаленный сервер:",
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(text = "Запущен: $lastStatus -> $lastTime")
                 }
-                Column(horizontalAlignment = Alignment.End) {
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                     Text(
                         text = "Локальный веб-сервер:",
                         style = MaterialTheme.typography.titleMedium

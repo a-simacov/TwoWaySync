@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -16,11 +17,13 @@ import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.R
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.impl.network.RetrofitClient
-import com.synngate.twowaysync.ui.MainActivity
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,53 +37,82 @@ class ExternalServerCheckService : Service() {
     companion object {
         const val SERVICE_CHANNEL_ID = "ServerCheckChannel"
         const val NOTIFICATION_ID = 1
-        const val ACTION_START_SERVICE = "ACTION_START_SERVICE"
-        const val ACTION_STOP_SERVICE = "ACTION_STOP_SERVICE"
-        const val STATUS_CHECK_INTERVAL_MS = 10000L
+        const val ACTION_START_FOREGROUND_SERVICE = "ACTION_START_FOREGROUND_SERVICE"
+        const val ACTION_STOP_FOREGROUND_SERVICE = "ACTION_STOP_FOREGROUND_SERVICE"
+        const val ACTION_STOP_SERVICE_FROM_NOTIFICATION = "ACTION_STOP_SERVICE_FROM_NOTIFICATION"
+        const val SERVICE_NOTIFICATION_TITLE = "Сервис проверки сервера"
+        const val SERVICE_NOTIFICATION_CONTENT_RUNNING = "Сервис запущен и проверяет сервер..."
+        const val SERVICE_NOTIFICATION_CONTENT_STOPPED = "Сервис остановлен."
+        const val STATUS_CHECK_INTERVAL_MS = 30000L
     }
 
     private lateinit var serverCheckDataStore: ServerCheckDataStore
     private lateinit var dataStore: DataStore<Preferences>
-    private var serviceIsRunning: Boolean = false
+    private var isServiceRunning = false
+    private var serverCheckJob: Job? = null // Job для управления корутиной проверки сервера
+    private val serviceScope = CoroutineScope(Dispatchers.Default) // Скоуп для корутин сервиса
 
     override fun onCreate() {
         super.onCreate()
         val appDependencies = (application as MyApplication).appDependencies
         dataStore = appDependencies.dataStore
         serverCheckDataStore = ServerCheckDataStore(dataStore)
+        Log.d("slax", "onCreate")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("slax", "onStartCommand - begin")
         when (intent?.action) {
-            ACTION_START_SERVICE -> {
+            ACTION_START_FOREGROUND_SERVICE -> {
                 startForegroundService()
             }
 
-            ACTION_STOP_SERVICE -> {
+            ACTION_STOP_FOREGROUND_SERVICE, ACTION_STOP_SERVICE_FROM_NOTIFICATION -> {
                 stopForegroundService()
             }
+
+            else -> {
+                // Обработка других действий, если необходимо
+            }
         }
+        Log.d("slax", "onStartCommand - end")
         return START_STICKY
     }
 
     private fun startForegroundService() {
+        Log.d("slax", "startForegroundService - begin")
+        if (isServiceRunning) return
+
+        isServiceRunning = true
         GlobalScope.launch {
-            serverCheckDataStore.saveServiceRunningState(true) // Сохраняем состояние сервиса в DataStore
+            serverCheckDataStore.saveServiceRunningState(true)
         }
         createNotificationChannel()
-        startForeground(
-            NOTIFICATION_ID,
-            createNotification("Сервис запущен", "Ожидание первой проверки")
-        )
-        startServerStatusCheck()
-        serviceIsRunning = true
+        val notification = createNotification(SERVICE_NOTIFICATION_CONTENT_RUNNING)
+        startForeground(NOTIFICATION_ID, notification)
+
+        // Явно запускаем startServerStatusCheck() в корутине на Dispatchers.Default
+        serviceScope.launch(Dispatchers.Default) {
+            startServerStatusCheck()
+        }
+        Log.d("slax", "startForegroundService - end")
     }
 
     private fun stopForegroundService() {
+        if (!isServiceRunning) return
+
+        isServiceRunning = false
         GlobalScope.launch {
-            serverCheckDataStore.saveServiceRunningState(false) // Сохраняем состояние сервиса в DataStore
+            serverCheckDataStore.saveServiceRunningState(false)
         }
-        stopForeground(true)
+
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationStopped = createNotification(SERVICE_NOTIFICATION_CONTENT_STOPPED, true)
+        notificationManager.notify(NOTIFICATION_ID, notificationStopped)
+
+        stopServerStatusCheck() // Останавливаем корутину проверки сервера реактивно
+        stopForegroundCompat()
         stopSelf()
     }
 
@@ -88,7 +120,7 @@ class ExternalServerCheckService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
                 SERVICE_CHANNEL_ID,
-                "Сервис проверки сервера",
+                "Проверка статуса активного сервера",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
             val manager = getSystemService(NotificationManager::class.java)
@@ -96,36 +128,62 @@ class ExternalServerCheckService : Service() {
         }
     }
 
-    private fun createNotification(title: String, message: String): Notification {
-        val notificationIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    private fun createNotification(contentText: String, canDismiss: Boolean = false): Notification {
+        val stopIntent = Intent(this, ExternalServerCheckService::class.java).apply {
+            action = ACTION_STOP_SERVICE_FROM_NOTIFICATION
         }
-        val pendingIntent: PendingIntent =
-            PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+        val stopPendingIntent: PendingIntent =
+            PendingIntent.getService(
+                this,
+                0,
+                stopIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
 
-        return NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setSmallIcon(R.drawable.outline_confirmation_number_24)
-            .setContentIntent(pendingIntent)
-            .build()
+        val builder = NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
+            .setContentTitle(SERVICE_NOTIFICATION_TITLE)
+            .setContentText(contentText)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setOngoing(!canDismiss)
+            .addAction(R.drawable.ic_stop, "Остановить", stopPendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+
+        if (canDismiss) {
+            builder.setAutoCancel(true)
+        }
+
+        return builder.build()
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun startServerStatusCheck() {
-        GlobalScope.launch(Dispatchers.IO) {
-            while (serviceIsRunning) { // Сервис работает постоянно, состояние управляется через DataStore
-//                val isServiceRunning = runBlocking { // Используем runBlocking для получения значения из Flow синхронно
-//                    serverCheckDataStore.serviceRunningStateFlow.first() // Получаем текущее значение из Flow
-//                }
-//                if (!isServiceRunning) { // Проверяем текущее состояние сервиса
-//                    break // Выходим из цикла, если сервис остановлен
-//                }
+        serviceScope.launch { // Запускаем корутину в serviceScope
+            delay(1000)
+            serverCheckDataStore.serviceRunningStateFlow.collectLatest { isRunning -> // Используем collectLatest для реактивного наблюдения
+                if (isRunning) {
+                    if (serverCheckJob?.isActive != true) { // Проверяем, что задача еще не запущена или не активна
+                        serverCheckJob =
+                            launchServerCheckTask() // Запускаем задачу проверки сервера
+                    }
+                } else {
+                    stopServerStatusCheck() // Останавливаем задачу проверки сервера, если сервис остановлен
+                }
+            }
+        }
+    }
+
+    private fun launchServerCheckTask(): Job =
+        serviceScope.launch(Dispatchers.IO) { // Функция для запуска задачи проверки сервера
+            while (true) {
                 checkServerStatus()
                 delay(STATUS_CHECK_INTERVAL_MS)
             }
-            stopForegroundServiceInternal() // Останавливаем сервис после выхода из цикла
         }
+
+
+    private fun stopServerStatusCheck() {
+        serverCheckJob?.cancel() // Отменяем корутину проверки сервера
+        serverCheckJob = null // Обнуляем Job
+        stopForegroundServiceInternal() // Внутренняя остановка сервиса (теперь вызывается реактивно из collectLatest при остановке сервиса)
     }
 
     private suspend fun checkServerStatus() {
@@ -168,24 +226,22 @@ class ExternalServerCheckService : Service() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = createNotification(
-            "Состояние сервера: $status",
-            "Последняя проверка: $time"
+            "$status\nПоследняя проверка: $time"
         )
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
-    private fun stopForegroundServiceInternal() { // Внутренний метод остановки
-        serviceIsRunning = false
-        GlobalScope.launch {
-            serverCheckDataStore.saveServiceRunningState(false)
-        }
+    private fun stopForegroundServiceInternal() {
+        stopForegroundCompat()
+        stopSelf()
+    }
 
+    private fun stopForegroundCompat() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            stopForeground(Service.STOP_FOREGROUND_REMOVE)
+            stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
             stopForeground(true)
         }
-        stopSelf()
     }
 
 
@@ -194,9 +250,15 @@ class ExternalServerCheckService : Service() {
     }
 
     override fun onDestroy() {
+        isServiceRunning = false
+        serviceScope.cancel() // Отменяем serviceScope и все запущенные в нем корутины при onDestroy
         GlobalScope.launch {
-            serverCheckDataStore.saveServiceRunningState(false) // Убеждаемся, что состояние остановлено при onDestroy
+            serverCheckDataStore.saveServiceRunningState(false)
         }
         super.onDestroy()
+    }
+
+    private fun isServiceRunning(): Boolean {
+        return isServiceRunning
     }
 }
