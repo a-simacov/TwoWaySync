@@ -5,16 +5,12 @@ import com.synngate.twowaysync.data.repository.LogRepository
 import com.synngate.twowaysync.data.source.local.LogLocalDataSource
 import com.synngate.twowaysync.domain.common.LogFilter
 import com.synngate.twowaysync.domain.model.LogDetails
-import com.synngate.twowaysync.util.LogHelper
 import kotlinx.coroutines.flow.Flow
 
 class LogRepositoryImpl(private val logLocalDataSource: LogLocalDataSource) : LogRepository {
 
     override suspend fun getLogs(filter: LogFilter?): Flow<List<LogDetails>> {
-        LogHelper.log("LogRepositoryImpl.getLogs() called")
-        val result = logLocalDataSource.getLogs(filter)
-        LogHelper.log("LogRepositoryImpl.getLogs() finished, result: $result")
-        return result
+        return logLocalDataSource.getLogs(filter)
     }
 
     override suspend fun insertLog(logDetails: LogDetails): Result<Unit> {

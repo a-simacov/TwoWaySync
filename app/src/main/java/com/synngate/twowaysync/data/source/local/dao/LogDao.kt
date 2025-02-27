@@ -8,8 +8,22 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LogDao {
-    @Query("SELECT * FROM logs")
-    fun getAll(): Flow<List<LogDetailsEntity>>
+
+    @Query(
+        """
+        SELECT * FROM logs 
+        WHERE (:event IS NULL OR event LIKE '%' || :event || '%') 
+        AND (:level IS NULL OR level = :level) 
+        AND (:dateTimeFrom IS NULL OR date_time >= :dateTimeFrom) 
+        AND (:dateTimeTo IS NULL OR date_time <= :dateTimeTo)
+    """
+    )
+    fun getFilteredLogs(
+        event: String?,
+        level: String?,
+        dateTimeFrom: Long?,
+        dateTimeTo: Long?
+    ): Flow<List<LogDetailsEntity>>
 
     @Insert
     suspend fun insert(log: LogDetailsEntity)

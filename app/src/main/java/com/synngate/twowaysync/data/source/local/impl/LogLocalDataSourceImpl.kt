@@ -16,10 +16,17 @@ class LogLocalDataSourceImpl(
 ) : LogLocalDataSource {
 
     override fun getLogs(filter: LogFilter?): Flow<List<LogDetails>> {
-        return logDao.getAll().map { logEntities ->
-            logEntities.map {
-                logEntityToLogDetails(it)
-            }
+        return if (filter == null) {
+            logDao.getFilteredLogs(null, null, null, null)
+        } else {
+            logDao.getFilteredLogs(
+                filter.event,
+                filter.level,
+                filter.dateTimeFrom,
+                filter.dateTimeTo
+            )
+        }.map { logEntities ->
+            logEntities.map { logEntityToLogDetails(it) }
         }
     }
 
