@@ -9,7 +9,9 @@ import com.synngate.twowaysync.data.repository.impl.LogRepositoryImpl
 import com.synngate.twowaysync.data.source.local.LogLocalDataSource
 import com.synngate.twowaysync.data.source.local.impl.LogLocalDataSourceImpl
 import com.synngate.twowaysync.domain.db.AppDatabase
+import com.synngate.twowaysync.domain.interactors.DeleteLogsInteractor
 import com.synngate.twowaysync.domain.interactors.GetLogsInteractor
+import com.synngate.twowaysync.domain.interactors.impl.DeleteLogsInteractorImpl
 import com.synngate.twowaysync.domain.interactors.impl.GetLogsInteractorImpl
 
 class LogsScreenViewModelFactory(
@@ -30,11 +32,16 @@ class LogsScreenViewModelFactory(
         GetLogsInteractorImpl(logRepository)
     }
 
+    private val deleteLogsInteractor: DeleteLogsInteractor by lazy {
+        DeleteLogsInteractorImpl(logRepository)
+    }
+
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LogsScreenViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return LogsScreenViewModel(
                 getLogsInteractor = getLogsInteractor,
+                deleteLogsInteractor = deleteLogsInteractor,
                 navController = navController
             ) as T
         }

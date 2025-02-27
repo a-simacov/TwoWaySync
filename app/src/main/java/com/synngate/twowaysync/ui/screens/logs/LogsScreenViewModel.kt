@@ -5,17 +5,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.synngate.twowaysync.domain.common.LogFilter
+import com.synngate.twowaysync.domain.interactors.DeleteLogsInteractor
 import com.synngate.twowaysync.domain.interactors.GetLogsInteractor
 import com.synngate.twowaysync.domain.model.LogDetails
+import com.synngate.twowaysync.util.LogHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.LocalDateTime
 
 class LogsScreenViewModel(
     private val getLogsInteractor: GetLogsInteractor,
+    private val deleteLogsInteractor: DeleteLogsInteractor,
     private val navController: NavHostController
 ) : ViewModel() {
 
@@ -34,32 +37,65 @@ class LogsScreenViewModel(
     private fun loadLogs() {
         collect = 0
         viewModelScope.launch {
-            _filter.collect { filter ->
-                getLogsInteractor.execute(filter)
+            _filter.collect { it ->
+                getLogsInteractor.execute(it)
                     .collect { logList ->
                         _logs.value = logList
                         Log.d("slax", "collect $collect")
                         collect++
+                        Log.d("slax", it.toString())
                     }
             }
         }
     }
 
-    fun applyFilter(event: String, level: String, dateFrom: LocalDate?, dateTo: LocalDate?) {
-        val fromTimestamp = dateFrom?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
-        val toTimestamp =
-            dateTo?.atTime(23, 59, 59)?.atZone(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
-
+    fun applyFilter(
+        event: String,
+        level: String,
+        dateFrom: LocalDateTime?,
+        dateTo: LocalDateTime?
+    ) {
         _filter.value = LogFilter(
             event = event.ifEmpty { null },
             level = level.ifEmpty { null },
-            fromTimestamp,
-            toTimestamp
+            dateFrom,
+            dateTo
         )
-        loadLogs()
+        TODO("ПРОБЛЕМА ЗДЕСЬ! ДО ЭТОГО ХОТЬ КАК-ТО РАБОТАЛО, НО СБРАСЫВАЛО ФИЛЬТР И ПОКАЗЫВАЛО ВЕСЬ СПИСОК")
+        //loadLogs()
+        Log.d("slax", "applyFilter")
     }
 
     fun clearFilter() {
         _filter.value = LogFilter()
+    }
+
+    fun addInfo() {
+        viewModelScope.launch(Dispatchers.IO) {
+            LogHelper.log("INFO")
+        }
+    }
+
+    fun addError() {
+        viewModelScope.launch {
+            LogHelper.log("ERROR", "ERROR")
+        }
+    }
+
+    fun addDebug() {
+        viewModelScope.launch {
+            LogHelper.log("DEBUG", "DEBUG")
+        }
+    }
+
+    fun deleteAll() {
+        viewModelScope.launch {
+            try {
+                deleteLogsInteractor.execute()
+                _logs.value = emptyList()
+            } catch (e: Exception) {
+                LogHelper.log(e.message ?: "")
+            }
+        }
     }
 }

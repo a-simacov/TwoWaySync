@@ -17,7 +17,7 @@ object LogHelper {
         this.logRepository = logRepository
     }
 
-    suspend fun log(message: String) {
+    suspend fun log(message: String, level: String = "INFO") {
         if (!::logRepository.isInitialized) {
             Log.e(TAG, "LogHelper is not initialized! Call LogHelper.init(logRepository) first.")
             return
@@ -25,7 +25,7 @@ object LogHelper {
         val logDetails = LogDetails(
             id = null,
             event = message,
-            level = "INFO",
+            level = level,
             dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()), ZoneId.systemDefault())
         )
 

@@ -17,6 +17,7 @@ import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.R
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.impl.network.RetrofitClient
+import com.synngate.twowaysync.util.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -207,7 +208,9 @@ class ExternalServerCheckService : Service() {
                     else
                         "Ошибка сервера (код ${response.code()})"
                 } catch (e: IOException) {
-                    "Ошибка подключения: ${e.message}"
+                    val connectionError = "Ошибка подключения: ${e.message}"
+                    LogHelper.log(connectionError, "ERROR")
+                    connectionError
                 }
             }
         }

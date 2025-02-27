@@ -20,4 +20,8 @@ class LogRepositoryImpl(private val logLocalDataSource: LogLocalDataSource) : Lo
     override suspend fun getLogsCount(): Result<Int> {
         return logLocalDataSource.getLogsCount()
     }
+
+    override suspend fun deleteAll() {
+        logLocalDataSource.deleteAll()
+    }
 }

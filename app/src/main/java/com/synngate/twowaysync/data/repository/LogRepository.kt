@@ -12,4 +12,6 @@ interface LogRepository {
     suspend fun insertLog(logDetails: LogDetails): Result<Unit>
 
     suspend fun getLogsCount(): Result<Int>
+
+    suspend fun deleteAll()
 }

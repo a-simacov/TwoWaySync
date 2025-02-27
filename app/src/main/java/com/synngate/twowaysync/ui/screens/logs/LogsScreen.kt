@@ -1,5 +1,6 @@
 package com.synngate.twowaysync.ui.screens.logs
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -46,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.synngate.twowaysync.domain.model.LogDetails
 import com.synngate.twowaysync.ui.screens.main.MainScreenButton
-import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
@@ -61,8 +63,8 @@ fun LogsScreen(
 
     var eventFilter = remember { mutableStateOf(filter.event.orEmpty()) }
     var levelFilter = remember { mutableStateOf(filter.level.orEmpty()) }
-    val dateFrom = remember { mutableStateOf<LocalDate?>(null) }
-    val dateTo = remember { mutableStateOf<LocalDate?>(null) }
+    val dateFrom = remember { mutableStateOf<LocalDateTime?>(null) }
+    val dateTo = remember { mutableStateOf<LocalDateTime?>(null) }
     val isFilterExpanded = remember { mutableStateOf(false) }
 
     Scaffold(
@@ -84,6 +86,21 @@ fun LogsScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            TestButtons(
+                onInfoClick = {
+                    viewModel.addInfo()
+                },
+                onErrorClick = {
+                    viewModel.addError()
+                },
+                onDebugClick = {
+                    viewModel.addDebug()
+                },
+                onClearClick = {
+                    viewModel.deleteAll()
+                },
+            )
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -132,13 +149,40 @@ fun LogsScreen(
     }
 }
 
+@Composable
+fun TestButtons(
+    onInfoClick: () -> Unit,
+    onErrorClick: () -> Unit,
+    onDebugClick: () -> Unit,
+    onClearClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Button(onClick = onInfoClick) {
+            Text("Info")
+        }
+        Button(onClick = onErrorClick) {
+            Text("Error")
+        }
+        Button(onClick = onDebugClick) {
+            Text("Debug")
+        }
+        Button(onClick = onClearClick) {
+            Text("Clear all")
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsFilterSection(
     eventFilter: MutableState<String>,
     levelFilter: MutableState<String>,
-    dateFrom: MutableState<LocalDate?>,
-    dateTo: MutableState<LocalDate?>,
+    dateFrom: MutableState<LocalDateTime?>,
+    dateTo: MutableState<LocalDateTime?>,
     applyFilter: () -> Unit,
     clearFilter: () -> Unit
 ) {
@@ -154,6 +198,16 @@ fun LogsFilterSection(
             value = eventFilter.value,
             onValueChange = { eventFilter.value = it },
             label = { Text("Событие") },
+            trailingIcon = {
+                if (eventFilter.value.isNotEmpty()) {
+                    IconButton(onClick = { eventFilter.value = "" }) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Очистить уровень ошибки"
+                        )
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -169,11 +223,31 @@ fun LogsFilterSection(
                 readOnly = true,
                 label = { Text("Уровень ошибки") },
                 trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        modifier = Modifier.clickable { expanded = true }
-                    )
+                    Row(
+                        modifier = Modifier.width(16.dp),
+                        //contentAlignment = Alignment.CenterEnd,
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+
+                    ) {
+                        // Кнопка очистки
+                        if (levelFilter.value.isNotEmpty()) {
+                            IconButton(
+                                onClick = { levelFilter.value = "" }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Очистить уровень ошибки"
+                                )
+                            }
+                        }
+                        //Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null,
+                            modifier = Modifier.clickable { expanded = true }
+                        )
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -226,13 +300,32 @@ fun LogsFilterSection(
 }
 
 @Composable
-fun DatePickerField(label: String, selectedDate: MutableState<LocalDate?>) {
+fun DatePickerField(label: String, selectedDate: MutableState<LocalDateTime?>) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
+
+    // Дата
     val datePickerDialog = android.app.DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
-            selectedDate.value = LocalDate.of(year, month + 1, dayOfMonth)
+            // После выбора даты открываем TimePicker для выбора времени
+            val timePickerDialog = android.app.TimePickerDialog(
+                context,
+                { _, hourOfDay, minute ->
+                    // Устанавливаем выбранную дату и время
+                    selectedDate.value = LocalDateTime.of(
+                        year,
+                        month + 1, // Месяцы в DatePicker начинаются с 0, поэтому нужно прибавить 1
+                        dayOfMonth,
+                        hourOfDay,
+                        minute
+                    )
+                },
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                true // 24-часовой формат времени
+            )
+            timePickerDialog.show()
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
@@ -240,19 +333,47 @@ fun DatePickerField(label: String, selectedDate: MutableState<LocalDate?>) {
     )
 
     OutlinedTextField(
-        value = selectedDate.value?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) ?: "",
+        value = selectedDate.value?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
+            ?: "",
         onValueChange = {},
         readOnly = true,
         label = { Text(label) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                Log.d("slax", "clicked")
+                datePickerDialog.show()
+            },
         trailingIcon = {
-            IconButton(onClick = { datePickerDialog.show() }) {
-                Icon(imageVector = Icons.Default.DateRange, contentDescription = "Выбрать дату")
+            Row(
+                modifier = Modifier.width(32.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+
+            ) {
+                if (selectedDate.value != null) {
+                    IconButton(
+                        onClick = {
+                            selectedDate.value = null
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Очистить дату и время"
+                        )
+                    }
+                }
+
+                IconButton(onClick = { datePickerDialog.show() }) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Выбрать дату"
+                    )
+                }
             }
-        },
-        modifier = Modifier.fillMaxWidth()
+        }
     )
 }
-
 
 @Composable
 fun LogItem(log: LogDetails, modifier: Modifier = Modifier) {

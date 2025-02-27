@@ -50,6 +50,10 @@ class LogLocalDataSourceImpl(
         return Result.Success(count)
     }
 
+    override suspend fun deleteAll() {
+        logDao.deleteAll()
+    }
+
     private fun logEntityToLogDetails(logEntity: LogDetailsEntity): LogDetails {
         return LogDetails(
             id = logEntity.id,
