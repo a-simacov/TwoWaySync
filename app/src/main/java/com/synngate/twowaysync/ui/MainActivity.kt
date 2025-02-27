@@ -26,6 +26,7 @@ import com.synngate.twowaysync.di.AppDependencies
 import com.synngate.twowaysync.di.MainScreenDependencies
 import com.synngate.twowaysync.di.ServersGraphDependencies
 import com.synngate.twowaysync.ui.screens.logs.LogsScreen
+import com.synngate.twowaysync.ui.screens.logs.LogsScreenViewModel
 import com.synngate.twowaysync.ui.screens.logs.LogsScreenViewModelFactory
 import com.synngate.twowaysync.ui.screens.main.MainScreen
 import com.synngate.twowaysync.ui.screens.main.MainScreenViewModel
@@ -91,8 +92,8 @@ fun AppNavGraph() {
         composable("logs_screen") {
             val factory =
                 LogsScreenViewModelFactory(context = context, navController = navController)
-
-            LogsScreen(factory = factory, navController = navController)
+            val viewModel: LogsScreenViewModel = viewModel(factory = factory)
+            LogsScreen(viewModel = viewModel, navController = navController)
         }
 
     }

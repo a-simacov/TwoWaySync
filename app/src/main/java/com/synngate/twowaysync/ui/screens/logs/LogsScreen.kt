@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.synngate.twowaysync.domain.model.LogDetails
 import com.synngate.twowaysync.ui.screens.main.MainScreenButton
@@ -26,12 +25,11 @@ import com.synngate.twowaysync.ui.screens.main.MainScreenButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsScreen(
-    factory: LogsScreenViewModelFactory,
+    viewModel: LogsScreenViewModel,
     navController: NavController
 ) {
 
-    val logScreenViewModel: LogsScreenViewModel = viewModel(factory = factory)
-    val logs by logScreenViewModel.logs.collectAsState()
+    val logs by viewModel.logs.collectAsState()
 
     Scaffold(
         topBar = {
