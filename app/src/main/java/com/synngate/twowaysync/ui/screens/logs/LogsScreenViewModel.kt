@@ -13,6 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -35,17 +37,18 @@ class LogsScreenViewModel(
     }
 
     private fun loadLogs() {
-        collect = 0
         viewModelScope.launch {
-            _filter.collect { it ->
-                getLogsInteractor.execute(it)
-                    .collect { logList ->
-                        _logs.value = logList
-                        Log.d("slax", "collect $collect")
-                        collect++
-                        Log.d("slax", it.toString())
-                    }
-            }
+            _filter // Используем StateFlow фильтра как источник
+                .flatMapLatest { currentFilter ->
+                    getLogsInteractor.execute(currentFilter) // Передаем текущий фильтр
+                }
+                .distinctUntilChanged()
+                .collect { logList ->
+                    _logs.value = logList
+                    Log.d("slax", "collect $collect")
+                    collect++
+                    Log.d("slax", _filter.value.toString())
+                }
         }
     }
 
@@ -58,11 +61,9 @@ class LogsScreenViewModel(
         _filter.value = LogFilter(
             event = event.ifEmpty { null },
             level = level.ifEmpty { null },
-            dateFrom,
-            dateTo
+            dateTimeFrom = dateFrom,
+            dateTimeTo = dateTo
         )
-        TODO("ПРОБЛЕМА ЗДЕСЬ! ДО ЭТОГО ХОТЬ КАК-ТО РАБОТАЛО, НО СБРАСЫВАЛО ФИЛЬТР И ПОКАЗЫВАЛО ВЕСЬ СПИСОК")
-        //loadLogs()
         Log.d("slax", "applyFilter")
     }
 

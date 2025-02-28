@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 class LogRepositoryImpl(private val logLocalDataSource: LogLocalDataSource) : LogRepository {
 
     override suspend fun getLogs(filter: LogFilter?): Flow<List<LogDetails>> {
-        return logLocalDataSource.getLogs(filter)
+        return logLocalDataSource.getLogs(filter)//.distinctUntilChanged()
     }
 
     override suspend fun insertLog(logDetails: LogDetails): Result<Unit> {
