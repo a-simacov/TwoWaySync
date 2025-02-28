@@ -35,7 +35,8 @@ private val MainScreenStatusBottomPadding = 24.dp
 fun MainScreen(
     viewModel: MainScreenViewModel,
     onCloseClick: () -> Unit,
-    onLogsClick: () -> Unit
+    onLogsClick: () -> Unit,
+    onProductsClick: () -> Unit
 ) {
 
     val mainScreenDataState: MainScreenData by viewModel.mainScreenDataState.collectAsState()
@@ -73,13 +74,13 @@ fun MainScreen(
                     text = "Логи: ${mainScreenDataState.logCount}",
                     onClick = { onLogsClick.invoke() }
                 )
-                MainScreenButton(
-                    text = "Серверы: ${mainScreenDataState.remoteServerCount}",
-                    onClick = { /* TODO: Обработка нажатия кнопки "Серверы" */ }
-                )
+//                MainScreenButton(
+//                    text = "Серверы: ${mainScreenDataState.remoteServerCount}",
+//                    onClick = { /* TODO: Обработка нажатия кнопки "Серверы" */ }
+//                )
                 MainScreenButton(
                     text = "Товары: ${mainScreenDataState.productCount}",
-                    onClick = { /* TODO: Обработка нажатия кнопки "Товары" */ }
+                    onClick = { onProductsClick.invoke() }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 8.dp)
                 MainScreenButton(

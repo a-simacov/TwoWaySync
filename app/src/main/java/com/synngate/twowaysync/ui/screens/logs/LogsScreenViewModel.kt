@@ -3,7 +3,6 @@ package com.synngate.twowaysync.ui.screens.logs
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import com.synngate.twowaysync.domain.common.LogFilter
 import com.synngate.twowaysync.domain.interactors.DeleteLogsInteractor
 import com.synngate.twowaysync.domain.interactors.GetLogsInteractor
@@ -21,7 +20,6 @@ import java.time.LocalDateTime
 class LogsScreenViewModel(
     private val getLogsInteractor: GetLogsInteractor,
     private val deleteLogsInteractor: DeleteLogsInteractor,
-    private val navController: NavHostController
 ) : ViewModel() {
 
     private val _logs = MutableStateFlow<List<LogDetails>>(emptyList())

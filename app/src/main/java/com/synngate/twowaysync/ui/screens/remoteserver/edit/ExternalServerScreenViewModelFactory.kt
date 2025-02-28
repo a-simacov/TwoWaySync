@@ -1,14 +1,11 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.edit
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.synngate.twowaysync.di.ServersGraphDependencies
 
 class ExternalServerScreenViewModelFactory(
     private val serversGraphDependencies: ServersGraphDependencies,
-    private val dataStore: DataStore<Preferences>
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -21,7 +18,8 @@ class ExternalServerScreenViewModelFactory(
                     checkServerAvailabilityInteractor = checkServerAvailabilityInteractor,
                     saveExternalServerInteractor = saveExternalServerInteractor,
                     deleteExternalServerInteractor = deleteExternalServerInteractor,
-                    dataStore = dataStore
+                    checkActiveServerInteractor = checkActiveServerInteractor,
+                    updateActiveServerInteractor = updateActiveServerInteractor
                 ) as T
             }
         }

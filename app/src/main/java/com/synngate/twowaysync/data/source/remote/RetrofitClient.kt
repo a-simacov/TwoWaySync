@@ -1,4 +1,4 @@
-package com.synngate.twowaysync.domain.interactors.impl.network
+package com.synngate.twowaysync.data.source.remote
 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -12,10 +12,10 @@ import javax.net.ssl.X509TrustManager
 object RetrofitClient {
     private var retrofit: Retrofit? = null
 
-    fun getApiService(baseUrl: String): ApiService { // <---- Функция для получения ApiService
-        if (retrofit == null || retrofit?.baseUrl().toString() != baseUrl) { // <---- Создаем новый Retrofit, если baseUrl изменился или retrofit еще не инициализирован
+    fun getApiService(baseUrl: String): ApiService {
+        if (retrofit == null || retrofit?.baseUrl().toString() != baseUrl) {
             val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY //  Уровень логирования - BODY (логировать и заголовки и тело запроса/ответа)
+                level = HttpLoggingInterceptor.Level.BODY
             }
 
             // Создаем TrustManager, который доверяет всем сертификатам
@@ -41,15 +41,15 @@ object RetrofitClient {
             val client = OkHttpClient.Builder()
                 .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
                 .hostnameVerifier { _, _ -> true } // Пропускаем проверку имени хоста
-                .addInterceptor(loggingInterceptor) //  Добавляем Interceptor для логирования (опционально, для отладки)
+                .addInterceptor(loggingInterceptor)
                 .build()
 
             retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl) //  Базовый URL сервера будет передаваться в эту функцию
-                .addConverterFactory(GsonConverterFactory.create()) //  Gson конвертер для JSON
-                .client(client) //  OkHttpClient с Interceptor (для логирования)
+                .baseUrl(baseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(client)
                 .build()
         }
-        return retrofit!!.create(ApiService::class.java) //  Создаем и возвращаем экземпляр ApiService
+        return retrofit!!.create(ApiService::class.java)
     }
 }

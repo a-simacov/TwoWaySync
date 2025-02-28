@@ -1,14 +1,15 @@
-package com.synngate.twowaysync.domain.interactors.impl.network
+package com.synngate.twowaysync.data.source.remote
 
+import com.synngate.twowaysync.domain.model.ProductDetails
 import retrofit2.Response
-import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.POST
 
 interface ApiService {
     @GET("/") //  Предполагаем, что echoEndpoint - это корень сервера, можно изменить на "/echo" или другой путь
     suspend fun echo(): Response<Void> //  Echo endpoint, ожидаем пустой ответ, только статус код
+
+    @GET("/products")
+    suspend fun getProducts(): Response<List<ProductDetails>>
 
 //    @GET("/") //  Предполагаем, что echoEndpoint - это корень сервера, можно изменить на "/echo" или другой путь
 //    suspend fun echo2(): Response<Void> //  Echo endpoint, ожидаем пустой ответ, только статус код

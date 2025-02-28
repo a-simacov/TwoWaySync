@@ -1,4 +1,4 @@
-package com.synngate.twowaysync.domain.interactors.impl.network
+package com.synngate.twowaysync.data.source.remote
 
 import com.google.gson.annotations.SerializedName
 

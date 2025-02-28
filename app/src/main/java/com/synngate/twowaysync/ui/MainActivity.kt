@@ -23,7 +23,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.di.AppDependencies
+import com.synngate.twowaysync.di.LogsScreensDpenedencies
 import com.synngate.twowaysync.di.MainScreenDependencies
+import com.synngate.twowaysync.di.ProductsScreensDependencies
 import com.synngate.twowaysync.di.ServersGraphDependencies
 import com.synngate.twowaysync.ui.screens.logs.LogsScreen
 import com.synngate.twowaysync.ui.screens.logs.LogsScreenViewModel
@@ -31,6 +33,9 @@ import com.synngate.twowaysync.ui.screens.logs.LogsScreenViewModelFactory
 import com.synngate.twowaysync.ui.screens.main.MainScreen
 import com.synngate.twowaysync.ui.screens.main.MainScreenViewModel
 import com.synngate.twowaysync.ui.screens.main.MainScreenViewModelFactory
+import com.synngate.twowaysync.ui.screens.products.ProductsScreen
+import com.synngate.twowaysync.ui.screens.products.ProductsScreenViewModel
+import com.synngate.twowaysync.ui.screens.products.ProductsScreenViewModelFactory
 import com.synngate.twowaysync.ui.screens.remoteserver.edit.ExternalServerScreen
 import com.synngate.twowaysync.ui.screens.remoteserver.edit.ExternalServerScreenViewModel
 import com.synngate.twowaysync.ui.screens.remoteserver.edit.ExternalServerScreenViewModelFactory
@@ -85,15 +90,28 @@ fun AppNavGraph() {
             MainScreen(
                 viewModel = viewModel,
                 onCloseClick = { navController.popBackStack() },
-                onLogsClick = { navController.navigate("logs_screen") }
+                onLogsClick = { navController.navigate("logs_screen") },
+                onProductsClick = { navController.navigate("products_screen") }
             )
         }
 
-        composable("logs_screen") {
-            val factory =
-                LogsScreenViewModelFactory(context = context, navController = navController)
-            val viewModel: LogsScreenViewModel = viewModel(factory = factory)
+        composable("logs_screen") { backStackEntry ->
+            val logScreenDependencies = LogsScreensDpenedencies(appDependencies)
+            val factory = LogsScreenViewModelFactory(logScreenDependencies)
+            val viewModel: LogsScreenViewModel =
+                viewModel(factory = factory, viewModelStoreOwner = backStackEntry)
             LogsScreen(viewModel = viewModel, navController = navController)
+        }
+
+        composable("products_screen") { backStackEntry ->
+            val productsScreenDependencies = ProductsScreensDependencies(appDependencies)
+            val factory = ProductsScreenViewModelFactory(productsScreenDependencies)
+            val viewModel: ProductsScreenViewModel =
+                viewModel(factory = factory, viewModelStoreOwner = backStackEntry)
+            ProductsScreen(
+                viewModel = viewModel,
+                onBackClicked = { navController.popBackStack() }
+            )
         }
 
     }
@@ -142,7 +160,6 @@ fun NavGraphBuilder.serversGraph(
 
         val factory = ExternalServerScreenViewModelFactory(
             serversGraphDependencies,
-            dataStore = appDependencies.dataStore
         )
         val serverId = backStackEntry.arguments?.getInt("serverId") ?: -1
         val viewModel: ExternalServerScreenViewModel =

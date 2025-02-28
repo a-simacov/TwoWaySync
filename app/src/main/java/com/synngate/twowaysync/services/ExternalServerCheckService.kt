@@ -9,14 +9,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.R
+import com.synngate.twowaysync.data.source.remote.RetrofitClient
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
-import com.synngate.twowaysync.domain.interactors.impl.network.RetrofitClient
 import com.synngate.twowaysync.util.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,11 +57,9 @@ class ExternalServerCheckService : Service() {
         val appDependencies = (application as MyApplication).appDependencies
         dataStore = appDependencies.dataStore
         serverCheckDataStore = ServerCheckDataStore(dataStore)
-        Log.d("slax", "onCreate")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("slax", "onStartCommand - begin")
         when (intent?.action) {
             ACTION_START_FOREGROUND_SERVICE -> {
                 startForegroundService()
@@ -76,12 +73,10 @@ class ExternalServerCheckService : Service() {
                 // Обработка других действий, если необходимо
             }
         }
-        Log.d("slax", "onStartCommand - end")
         return START_STICKY
     }
 
     private fun startForegroundService() {
-        Log.d("slax", "startForegroundService - begin")
         if (isServiceRunning) return
 
         isServiceRunning = true
@@ -96,7 +91,6 @@ class ExternalServerCheckService : Service() {
         serviceScope.launch(Dispatchers.Default) {
             startServerStatusCheck()
         }
-        Log.d("slax", "startForegroundService - end")
     }
 
     private fun stopForegroundService() {

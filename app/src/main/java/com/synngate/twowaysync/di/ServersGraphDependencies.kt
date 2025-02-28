@@ -1,15 +1,19 @@
 package com.synngate.twowaysync.di
 
+import com.synngate.twowaysync.domain.interactors.CheckActiveServerInteractor
 import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
 import com.synngate.twowaysync.domain.interactors.DeleteExternalServerInteractor
 import com.synngate.twowaysync.domain.interactors.GetExternalServerInteractor
 import com.synngate.twowaysync.domain.interactors.GetExternalServersInteractor
 import com.synngate.twowaysync.domain.interactors.SaveExternalServerInteractor
+import com.synngate.twowaysync.domain.interactors.UpdateActiveServerInteractor
+import com.synngate.twowaysync.domain.interactors.impl.CheckActiveServerInteractorImpl
 import com.synngate.twowaysync.domain.interactors.impl.CheckServerAvailabilityInteractorImpl
 import com.synngate.twowaysync.domain.interactors.impl.DeleteExternalServerInteractorImpl
 import com.synngate.twowaysync.domain.interactors.impl.GetExternalServerInteractorImpl
 import com.synngate.twowaysync.domain.interactors.impl.GetExternalServersInteractorImpl
 import com.synngate.twowaysync.domain.interactors.impl.SaveExternalServerInteractorImpl
+import com.synngate.twowaysync.domain.interactors.impl.UpdateActiveServerInteractorImpl
 
 class ServersGraphDependencies(
     private val appDependencies: AppDependencies
@@ -33,6 +37,14 @@ class ServersGraphDependencies(
 
     val deleteExternalServerInteractor: DeleteExternalServerInteractor by lazy {
         DeleteExternalServerInteractorImpl(appDependencies.externalServerRepository)
+    }
+
+    val checkActiveServerInteractor: CheckActiveServerInteractor by lazy {
+        CheckActiveServerInteractorImpl(appDependencies.activeServerRepository)
+    }
+
+    val updateActiveServerInteractor: UpdateActiveServerInteractor by lazy {
+        UpdateActiveServerInteractorImpl(appDependencies.activeServerRepository)
     }
 
     fun clear() {

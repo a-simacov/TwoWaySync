@@ -2,16 +2,22 @@ package com.synngate.twowaysync.data.source.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.synngate.twowaysync.data.source.local.entity.ProductDetailsEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductDao {
     @Query("SELECT * FROM products")
-    suspend fun getAll(): List<ProductDetailsEntity>
+    fun getAllProducts(): Flow<List<ProductDetailsEntity>>
 
-    @Insert
-    suspend fun insert(product: ProductDetailsEntity)
+    @Query("SELECT COUNT(*) FROM products")
+    suspend fun getProductsCount(): Int
 
-    // Можно добавить другие методы DAO при необходимости (например, для удаления, обновления, поиска товара по ID или штрихкоду)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertProducts(products: List<ProductDetailsEntity>)
+
+    @Query("DELETE FROM products")
+    suspend fun deleteAll()
 }

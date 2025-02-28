@@ -1,7 +1,7 @@
 package com.synngate.twowaysync.domain.interactors.impl
 
+import com.synngate.twowaysync.data.source.remote.RetrofitClient
 import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
-import com.synngate.twowaysync.domain.interactors.impl.network.RetrofitClient
 import com.synngate.twowaysync.domain.model.ExternalServer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

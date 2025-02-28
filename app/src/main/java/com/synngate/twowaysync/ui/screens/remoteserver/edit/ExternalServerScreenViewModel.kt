@@ -1,22 +1,19 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.edit
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
+import com.synngate.twowaysync.domain.interactors.CheckActiveServerInteractor
 import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
 import com.synngate.twowaysync.domain.interactors.DeleteExternalServerInteractor
 import com.synngate.twowaysync.domain.interactors.GetExternalServerInteractor
 import com.synngate.twowaysync.domain.interactors.SaveExternalServerInteractor
+import com.synngate.twowaysync.domain.interactors.UpdateActiveServerInteractor
 import com.synngate.twowaysync.domain.model.ExternalServer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -25,7 +22,8 @@ class ExternalServerScreenViewModel(
     private val checkServerAvailabilityInteractor: CheckServerAvailabilityInteractor,
     private val saveExternalServerInteractor: SaveExternalServerInteractor,
     private val deleteExternalServerInteractor: DeleteExternalServerInteractor,
-    private val dataStore: DataStore<Preferences>,
+    private val checkActiveServerInteractor: CheckActiveServerInteractor,
+    private val updateActiveServerInteractor: UpdateActiveServerInteractor
 ) : ViewModel() {
 
     private var currentServer: ExternalServer = ExternalServer(name = "", host = "", port = 0)
@@ -87,12 +85,6 @@ class ExternalServerScreenViewModel(
         }
     }
 
-    private suspend fun isCurrentServerActive(): Boolean {
-        val preferences = dataStore.data.first()
-        val savedServerId = preferences[CURRENT_SERVER_ID_KEY]
-        return savedServerId == currentServer.id
-    }
-
     fun load(serverId: Int) {
         if (serverId == -1) return
 
@@ -101,7 +93,7 @@ class ExternalServerScreenViewModel(
                 if (externalServer == null) return@collect
                 currentServer = externalServer.copy()
 
-                val isActive = isCurrentServerActive()
+                val isActive = checkActiveServerInteractor.execute(currentServer)
 
                 updateUiState {
                     ExternalServerUiState(
@@ -125,7 +117,7 @@ class ExternalServerScreenViewModel(
 
     fun toggleActiveStatus() {
         viewModelScope.launch {
-            val isActive = isCurrentServerActive()
+            val isActive = checkActiveServerInteractor.execute(currentServer)
             updateUiState {
                 it.copy(
                     isActive = !isActive,
@@ -133,9 +125,7 @@ class ExternalServerScreenViewModel(
                 )
             }
 
-            dataStore.edit { prefs ->
-                prefs[CURRENT_SERVER_ID_KEY] = if (isActive) -1 else currentServer.id!!
-            }
+            updateActiveServerInteractor.execute(currentServer, isActive)
         }
     }
 

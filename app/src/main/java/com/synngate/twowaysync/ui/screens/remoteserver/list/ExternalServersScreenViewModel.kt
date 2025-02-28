@@ -51,6 +51,7 @@ class ExternalServersScreenViewModel(
                     val uiList = serverList.map { }
                     _servers.value = serverList // uiList
                 }
+            //AppDependencies.setCurrentApiService()
         }
     }
 }
