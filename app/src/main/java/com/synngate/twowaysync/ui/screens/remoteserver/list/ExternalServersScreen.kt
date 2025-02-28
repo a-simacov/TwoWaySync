@@ -42,7 +42,7 @@ fun ExternalServersScreen(
     val activeServerIdState = viewModel.activeServerIdState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Список внешних серверов") }) },
+        topBar = { TopAppBar(title = { Text("Внешние серверы") }) },
         floatingActionButton = { NewExternalServerButton(onNewItemClick) }
     ) { paddingValues ->
         Column(

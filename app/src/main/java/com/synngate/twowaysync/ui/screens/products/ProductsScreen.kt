@@ -1,5 +1,7 @@
 package com.synngate.twowaysync.ui.screens.products
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,16 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -30,15 +29,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.synngate.twowaysync.domain.model.ProductDetails
+import com.synngate.twowaysync.ui.screens.main.MainScreenButton
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductsScreen(
-    viewModel: ProductsScreenViewModel,
+    viewModel: ProductsScreenViewModelInterface,
     onBackClicked: () -> Unit
 ) {
     val products by viewModel.products.collectAsState()
@@ -49,14 +52,14 @@ fun ProductsScreen(
     val serverStatus by viewModel.serverStatus.collectAsState()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Products ($productsCount)") },
-                navigationIcon = {
-                    IconButton(onClick = { onBackClicked.invoke() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
+        topBar = { TopAppBar(title = { Text("Товары ($productsCount)") }) },
+        bottomBar = {
+            MainScreenButton(
+                text = "Закрыть",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp, start = 8.dp, end = 8.dp),
+                onClick = { onBackClicked.invoke() }
             )
         }
     ) { paddingValues ->
@@ -79,22 +82,7 @@ fun ProductsScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 items(products) { product ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Column(modifier = Modifier.width(100.dp)) {
-                            Text(text = product.id.toString(), fontSize = 14.sp)
-                            Text(text = product.barcode, fontSize = 14.sp)
-                        }
-                        Text(
-                            text = product.name,
-                            modifier = Modifier.padding(start = 8.dp),
-                            maxLines = Int.MAX_VALUE,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    ProductItem(product)
                 }
             }
 
@@ -142,4 +130,77 @@ fun ProductsScreen(
             }
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ProductItem(product: ProductDetails, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .combinedClickable(
+                onClick = { },
+                onLongClick = { }
+            ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "${product.name} (id: ${product.id})",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                text = product.barcode,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = false)
+@Composable
+fun ProductsScreenPreview() {
+    // Фиктивные данные для превью
+    val fakeProducts = listOf(
+        ProductDetails(id = 1, name = "Продукт 1", barcode = "1234567890123"),
+        ProductDetails(id = 2, name = "Продукт 2", barcode = "9876543210987")
+    )
+    val fakeSearchQuery = "Продукт"
+    val fakeProductsCount = fakeProducts.size
+    val fakeIsLoading = false
+    val fakeMessage: String? = "Products updated successfully"
+    val fakeServerStatus = "Server is available"
+
+    // Создаём фейковый ViewModel или напрямую передаём состояния
+    ProductsScreen(
+        viewModel = object : ProductsScreenViewModelInterface {
+            override val products: StateFlow<List<ProductDetails>> = MutableStateFlow(fakeProducts)
+            override val searchQuery: StateFlow<String> = MutableStateFlow(fakeSearchQuery)
+            override val productsCount: StateFlow<Int> = MutableStateFlow(fakeProductsCount)
+            override val isLoading: StateFlow<Boolean> = MutableStateFlow(fakeIsLoading)
+            override val message: StateFlow<String?> = MutableStateFlow(fakeMessage)
+            override val serverStatus: StateFlow<String> = MutableStateFlow(fakeServerStatus)
+
+            override fun onSearchQueryChanged(query: String) {}
+            override fun updateProducts() {}
+            override fun clearProducts() {}
+            override fun clearMessage() {}
+        },
+        onBackClicked = {}
+    )
+}
+
+// Интерфейс для фейкового ViewModel
+interface ProductsScreenViewModelInterface {
+    val products: StateFlow<List<ProductDetails>>
+    val searchQuery: StateFlow<String>
+    val productsCount: StateFlow<Int>
+    val isLoading: StateFlow<Boolean>
+    val message: StateFlow<String?>
+    val serverStatus: StateFlow<String>
+    fun onSearchQueryChanged(query: String)
+    fun updateProducts()
+    fun clearProducts()
+    fun clearMessage()
 }

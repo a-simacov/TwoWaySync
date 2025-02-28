@@ -3,6 +3,8 @@ package com.synngate.twowaysync.ui.screens.products
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.synngate.twowaysync.di.AppDependencies
@@ -10,6 +12,7 @@ import com.synngate.twowaysync.domain.interactors.DeleteProductsInteractor
 import com.synngate.twowaysync.domain.interactors.GetProductsInteractor
 import com.synngate.twowaysync.domain.interactors.UpdateProductsInteractor
 import com.synngate.twowaysync.domain.model.ProductDetails
+import com.synngate.twowaysync.services.PingActiveServerWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,28 +24,29 @@ class ProductsScreenViewModel(
     private val getProductsInteractor: GetProductsInteractor,
     private val updateProductsInteractor: UpdateProductsInteractor,
     private val deleteProductsInteractor: DeleteProductsInteractor,
-) : ViewModel() {
+) : ViewModel(), ProductsScreenViewModelInterface {
 
     private val _products = MutableStateFlow<List<ProductDetails>>(emptyList())
-    val products: StateFlow<List<ProductDetails>> = _products.asStateFlow()
+    override val products: StateFlow<List<ProductDetails>> = _products.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    override val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private val _productsCount = MutableStateFlow(0)
-    val productsCount: StateFlow<Int> = _productsCount.asStateFlow()
+    override val productsCount: StateFlow<Int> = _productsCount.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    override val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _message = MutableStateFlow<String?>(null)
-    val message: StateFlow<String?> = _message.asStateFlow()
+    override val message: StateFlow<String?> = _message.asStateFlow()
 
     private val _serverStatus = MutableStateFlow("Checking server status...")
-    val serverStatus: StateFlow<String> = _serverStatus.asStateFlow()
+    override val serverStatus: StateFlow<String> = _serverStatus.asStateFlow()
 
     init {
         loadProducts()
+        scheduleServerPing()
         observeServerStatus()
     }
 
@@ -62,33 +66,43 @@ class ProductsScreenViewModel(
         }
     }
 
-    fun onSearchQueryChanged(query: String) {
+    override fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
 
-    fun updateProducts() {
+    override fun updateProducts() {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             val result = updateProductsInteractor.execute()
             _isLoading.value = false
             if (result.isSuccess) {
-                _message.value = "Products updated successfully"
+                _message.value = "Обновление товаров выполнено"
             } else {
-                val exceptionMessage = result.exceptionOrNull()?.message ?: "Unknown error"
-                _message.value = "Update failed: $exceptionMessage"
+                val exceptionMessage = result.exceptionOrNull()?.message ?: "Неизвестная ошибка"
+                _message.value = "Ошибка при обновлении: $exceptionMessage"
             }
         }
     }
 
-    fun clearProducts() {
+    override fun clearProducts() {
         viewModelScope.launch(Dispatchers.IO) {
             deleteProductsInteractor.execute()
-            _message.value = "Products cleared"
+            _message.value = "Все товары удалены"
         }
     }
 
-    fun clearMessage() {
+    override fun clearMessage() {
         _message.value = null
+    }
+
+    private fun scheduleServerPing() {
+        val workManager = WorkManager.getInstance(AppDependencies.applicationContext)
+        val pingRequest = OneTimeWorkRequestBuilder<PingActiveServerWorker>().build()
+        workManager.enqueueUniqueWork(
+            "PingActiveServerWorker",
+            ExistingWorkPolicy.KEEP,
+            pingRequest
+        )
     }
 
     private fun observeServerStatus() {
@@ -99,20 +113,14 @@ class ProductsScreenViewModel(
                 .collect { workInfos ->
                     val status = workInfos.firstOrNull()?.state?.let {
                         when (it) {
-                            WorkInfo.State.SUCCEEDED -> "Server is available"
-                            WorkInfo.State.FAILED -> "Server is unavailable"
-                            else -> "Checking server status..."
+                            WorkInfo.State.SUCCEEDED -> "Сервер доступен"
+                            WorkInfo.State.FAILED -> "Сервер недоступен"
+                            WorkInfo.State.ENQUEUED, WorkInfo.State.RUNNING -> "Проверка статуса сервера..."
+                            else -> "Проверка статуса сервера не запущена"
                         }
-                    } ?: "No status available"
+                    } ?: "Нет статуса проверки сервера"
                     _serverStatus.value = status
                 }
         }
     }
-
-//    fun onBackClicked() {
-//        navController.navigate("main_screen") {
-//            popUpTo(navController.graph.startDestinationId)
-//        }
-//        viewModelStore.clear()
-//    }
 }

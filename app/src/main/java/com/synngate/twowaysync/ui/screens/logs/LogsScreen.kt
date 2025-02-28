@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.synngate.twowaysync.domain.model.LogDetails
 import com.synngate.twowaysync.ui.screens.main.MainScreenButton
 import java.time.LocalDateTime
@@ -56,13 +55,13 @@ import java.util.Calendar
 @Composable
 fun LogsScreen(
     viewModel: LogsScreenViewModel,
-    navController: NavController
+    onCloseClick: () -> Unit
 ) {
     val logs by viewModel.logs.collectAsState()
     val filter by viewModel.filter.collectAsState()
 
-    var eventFilter = remember { mutableStateOf(filter.event.orEmpty()) }
-    var levelFilter = remember { mutableStateOf(filter.level.orEmpty()) }
+    val eventFilter = remember { mutableStateOf(filter.event.orEmpty()) }
+    val levelFilter = remember { mutableStateOf(filter.level.orEmpty()) }
     val dateFrom = remember { mutableStateOf<LocalDateTime?>(null) }
     val dateTo = remember { mutableStateOf<LocalDateTime?>(null) }
     val isFilterExpanded = remember { mutableStateOf(false) }
@@ -75,7 +74,7 @@ fun LogsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp, start = 8.dp, end = 8.dp),
-                onClick = { navController.popBackStack() }
+                onClick = { onCloseClick.invoke() }
             )
         }
     ) { paddingValues ->
@@ -87,18 +86,10 @@ fun LogsScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             TestButtons(
-                onInfoClick = {
-                    viewModel.addInfo()
-                },
-                onErrorClick = {
-                    viewModel.addError()
-                },
-                onDebugClick = {
-                    viewModel.addDebug()
-                },
-                onClearClick = {
-                    viewModel.deleteAll()
-                },
+                onInfoClick = { viewModel.addInfo() },
+                onErrorClick = { viewModel.addError() },
+                onDebugClick = { viewModel.addDebug() },
+                onClearClick = { viewModel.deleteAll() },
             )
 
             LazyColumn(
@@ -225,12 +216,10 @@ fun LogsFilterSection(
                 trailingIcon = {
                     Row(
                         modifier = Modifier.width(16.dp),
-                        //contentAlignment = Alignment.CenterEnd,
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
 
                     ) {
-                        // Кнопка очистки
                         if (levelFilter.value.isNotEmpty()) {
                             IconButton(
                                 onClick = { levelFilter.value = "" }
@@ -241,7 +230,6 @@ fun LogsFilterSection(
                                 )
                             }
                         }
-                        //Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Default.ArrowDropDown,
                             contentDescription = null,
@@ -272,9 +260,9 @@ fun LogsFilterSection(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        DatePickerField("Дата с", dateFrom)
+        DatePickerField("Дата/время с", dateFrom)
         Spacer(modifier = Modifier.height(8.dp))
-        DatePickerField("Дата по", dateTo)
+        DatePickerField("Дата/время по", dateTo)
 
         Spacer(modifier = Modifier.height(16.dp))
 

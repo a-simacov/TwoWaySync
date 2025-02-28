@@ -14,9 +14,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.R
-import com.synngate.twowaysync.data.source.remote.RetrofitClient
-import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
-import com.synngate.twowaysync.util.LogHelper
+import com.synngate.twowaysync.di.AppDependencies
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -24,10 +22,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -43,7 +39,7 @@ class ExternalServerCheckService : Service() {
         const val SERVICE_NOTIFICATION_TITLE = "Сервис проверки сервера"
         const val SERVICE_NOTIFICATION_CONTENT_RUNNING = "Сервис запущен и проверяет сервер..."
         const val SERVICE_NOTIFICATION_CONTENT_STOPPED = "Сервис остановлен."
-        const val STATUS_CHECK_INTERVAL_MS = 30000L
+        const val STATUS_CHECK_INTERVAL_MS = 15000L
     }
 
     private lateinit var serverCheckDataStore: ServerCheckDataStore
@@ -183,28 +179,18 @@ class ExternalServerCheckService : Service() {
 
     private suspend fun checkServerStatus() {
         val statusInfo = withContext(Dispatchers.IO) {
-            val prefs = dataStore.data.first()
-            val activeServerId = prefs[CURRENT_SERVER_ID_KEY] ?: -1
-            val activeServer =
-                (application as MyApplication).appDependencies.provideRemoteServerRepository()
-                    .getServer(activeServerId).first()
-
-            if (activeServer == null) {
+            val activeApiService = AppDependencies.activeApiService
+            if (activeApiService == null)
                 "Активный сервер не установлен"
-            } else {
-                val baseUrl = "https://${activeServer.host}:${activeServer.port}"
-                val apiService = RetrofitClient.getApiService(baseUrl)
-
+            else {
                 try {
-                    val response = apiService.echo()
+                    val response = activeApiService.echo()
                     if (response.isSuccessful)
                         "Сервер доступен (код ${response.code()})"
                     else
                         "Ошибка сервера (код ${response.code()})"
-                } catch (e: IOException) {
-                    val connectionError = "Ошибка подключения: ${e.message}"
-                    LogHelper.log(connectionError, "ERROR")
-                    connectionError
+                } catch (e: Exception) {
+                    "Ошибка подключения: ${e.message}"
                 }
             }
         }

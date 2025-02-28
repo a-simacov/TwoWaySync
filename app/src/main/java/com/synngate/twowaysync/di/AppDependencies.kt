@@ -1,7 +1,6 @@
 package com.synngate.twowaysync.di
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -104,12 +103,8 @@ object AppDependencies {
     fun provideLocalWebServerService(): LocalWebServerService = localWebServerService
 
     suspend fun setCurrentApiService(activeServerId: Int) {
-//        val prefs = dataStore.data.first()
-//        val activeServerId = prefs[CURRENT_SERVER_ID_KEY] ?: -1
-
         if (activeServerId == -1) {
             activeApiService = null
-            Log.d("slax", "current api service is empty")
         } else {
             val activeServer = provideRemoteServerRepository()
                 .getServer(activeServerId)
@@ -117,7 +112,6 @@ object AppDependencies {
 
             val baseUrl = "https://${activeServer?.host}:${activeServer?.port}"
             activeApiService = RetrofitClient.getApiService(baseUrl)
-            Log.d("slax", "current api service is $activeServer")
         }
     }
 }

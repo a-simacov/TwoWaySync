@@ -100,7 +100,10 @@ fun AppNavGraph() {
             val factory = LogsScreenViewModelFactory(logScreenDependencies)
             val viewModel: LogsScreenViewModel =
                 viewModel(factory = factory, viewModelStoreOwner = backStackEntry)
-            LogsScreen(viewModel = viewModel, navController = navController)
+            LogsScreen(
+                viewModel = viewModel,
+                onCloseClick = { navController.popBackStack() }
+            )
         }
 
         composable("products_screen") { backStackEntry ->
