@@ -17,8 +17,8 @@ import com.synngate.twowaysync.R
 import com.synngate.twowaysync.di.AppDependencies
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -46,7 +46,7 @@ class ExternalServerCheckService : Service() {
     private lateinit var dataStore: DataStore<Preferences>
     private var isServiceRunning = false
     private var serverCheckJob: Job? = null // Job для управления корутиной проверки сервера
-    private val serviceScope = CoroutineScope(Dispatchers.Default) // Скоуп для корутин сервиса
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate() {
         super.onCreate()
@@ -76,7 +76,7 @@ class ExternalServerCheckService : Service() {
         if (isServiceRunning) return
 
         isServiceRunning = true
-        GlobalScope.launch {
+        serviceScope.launch {
             serverCheckDataStore.saveServiceRunningState(true)
         }
         createNotificationChannel()
@@ -93,7 +93,7 @@ class ExternalServerCheckService : Service() {
         if (!isServiceRunning) return
 
         isServiceRunning = false
-        GlobalScope.launch {
+        serviceScope.launch {
             serverCheckDataStore.saveServiceRunningState(false)
         }
 
@@ -198,7 +198,7 @@ class ExternalServerCheckService : Service() {
         val currentTime =
             SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
-        GlobalScope.launch {
+        serviceScope.launch {
             serverCheckDataStore.saveServerStatus(statusInfo) // Сохраняем статус в DataStore
             serverCheckDataStore.saveServerCheckTime(currentTime) // Сохраняем время в DataStore
         }
@@ -234,10 +234,10 @@ class ExternalServerCheckService : Service() {
 
     override fun onDestroy() {
         isServiceRunning = false
-        serviceScope.cancel() // Отменяем serviceScope и все запущенные в нем корутины при onDestroy
-        GlobalScope.launch {
+        serviceScope.launch {
             serverCheckDataStore.saveServiceRunningState(false)
         }
+        serviceScope.cancel() // Отменяем serviceScope и все запущенные в нем корутины при onDestroy
         super.onDestroy()
     }
 

@@ -68,7 +68,7 @@ class ExternalServerScreenViewModel(
     }
 
     fun save() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if (validateForm()) {
                 val currentState = _uiState.value
 
@@ -88,7 +88,7 @@ class ExternalServerScreenViewModel(
     fun load(serverId: Int) {
         if (serverId == -1) return
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             getExternalServerInteractor.execute(serverId).collect { externalServer ->
                 if (externalServer == null) return@collect
                 currentServer = externalServer.copy()
@@ -110,13 +110,13 @@ class ExternalServerScreenViewModel(
     }
 
     fun delete() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             deleteExternalServerInteractor.execute(currentServer)
         }
     }
 
     fun toggleActiveStatus() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val isActive = checkActiveServerInteractor.execute(currentServer)
             updateUiState {
                 it.copy(
@@ -130,7 +130,7 @@ class ExternalServerScreenViewModel(
     }
 
     fun testConnection() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _connectionStatus.value = ConnectionStatus.Connecting
             delay(1000)
             withContext(Dispatchers.IO) {

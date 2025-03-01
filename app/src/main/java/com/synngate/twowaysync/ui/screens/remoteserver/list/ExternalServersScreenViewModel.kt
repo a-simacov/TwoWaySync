@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.synngate.twowaysync.di.DataStoreKeys.CURRENT_SERVER_ID_KEY
 import com.synngate.twowaysync.domain.interactors.GetExternalServersInteractor
 import com.synngate.twowaysync.domain.model.ExternalServer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +46,7 @@ class ExternalServersScreenViewModel(
 
     private fun loadServers() {
         Log.d("slax", "VM loadServers happened")
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             getExternalServersInteractor.execute()
                 .collect { serverList ->
                     val uiList = serverList.map { }

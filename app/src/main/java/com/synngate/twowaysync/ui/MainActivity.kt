@@ -44,6 +44,7 @@ import com.synngate.twowaysync.ui.screens.remoteserver.list.ExternalServersScree
 import com.synngate.twowaysync.ui.screens.remoteserver.list.ExternalServersScreenViewModelFactory
 import com.synngate.twowaysync.ui.theme.TwoWaySyncTheme
 import com.synngate.twowaysync.util.LogHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -52,7 +53,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             LogHelper.log("MainActivity created")
         }
 

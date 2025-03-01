@@ -7,6 +7,7 @@ import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInterac
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
 import com.synngate.twowaysync.domain.model.MainScreenData
 import com.synngate.twowaysync.services.ServerCheckDataStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -45,7 +46,7 @@ class MainScreenViewModel(
     }
 
     private fun loadMainScreenData() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val result = getMainScreenDataInteractor.invoke()
             when (result) {
                 is Result.Success -> {
@@ -66,14 +67,14 @@ class MainScreenViewModel(
 
     fun startService(startServiceAction: () -> Unit) {
         startServiceAction()
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             serverCheckDataStore.saveServiceRunningState(true)
         }
     }
 
     fun stopService(stopServiceAction: () -> Unit) {
         stopServiceAction()
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             serverCheckDataStore.saveServiceRunningState(false)
         }
     }

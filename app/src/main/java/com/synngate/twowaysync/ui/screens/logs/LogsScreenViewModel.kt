@@ -35,7 +35,7 @@ class LogsScreenViewModel(
     }
 
     private fun loadLogs() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _filter // Используем StateFlow фильтра как источник
                 .flatMapLatest { currentFilter ->
                     getLogsInteractor.execute(currentFilter) // Передаем текущий фильтр
@@ -76,19 +76,19 @@ class LogsScreenViewModel(
     }
 
     fun addError() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             LogHelper.log("ERROR", "ERROR")
         }
     }
 
     fun addDebug() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             LogHelper.log("DEBUG", "DEBUG")
         }
     }
 
     fun deleteAll() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 deleteLogsInteractor.execute()
                 _logs.value = emptyList()

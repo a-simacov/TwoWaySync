@@ -106,7 +106,7 @@ class ProductsScreenViewModel(
     }
 
     private fun observeServerStatus() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             WorkManager.getInstance(AppDependencies.applicationContext)
                 .getWorkInfosForUniqueWorkLiveData("PingActiveServerWorker")
                 .asFlow()
