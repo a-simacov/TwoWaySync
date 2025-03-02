@@ -1,7 +1,10 @@
 package com.synngate.twowaysync.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ProductDetails(
-    val id: Int, // ID теперь Int (не nullable) - соответствует ProductDetailsEntity
+    val id: Int,
     val name: String,
     val barcode: String,
     val modified: Boolean = false

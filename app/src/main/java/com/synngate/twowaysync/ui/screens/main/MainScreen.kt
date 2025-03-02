@@ -1,6 +1,6 @@
 package com.synngate.twowaysync.ui.screens.main
 
-import android.content.Intent
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,37 +24,38 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.synngate.twowaysync.domain.model.MainScreenData
-import com.synngate.twowaysync.services.ExternalServerCheckService
 
 private val MainScreenButtonVerticalSpacing = 16.dp
-private val MainScreenStatusBottomPadding = 24.dp
+private val MainScreenStatusBottomPadding = 16.dp
+private val MainScreenPadding = 16.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     viewModel: MainScreenViewModel,
-    onCloseClick: () -> Unit,
-    onLogsClick: () -> Unit,
-    onProductsClick: () -> Unit
+    onCloseClicked: () -> Unit,
+    onLogsClicked: () -> Unit,
+    onProductsClicked: () -> Unit
 ) {
-
-    val mainScreenDataState: MainScreenData by viewModel.mainScreenDataState.collectAsState()
-
-    val serviceStatus by viewModel.serviceRunningStateFlow.collectAsStateWithLifecycle()
-    val lastStatus by viewModel.serverStatusFlow.collectAsStateWithLifecycle()
-    val lastTime by viewModel.serverCheckTimeFlow.collectAsStateWithLifecycle()
+    val mainScreenData by viewModel.mainScreenDataState.collectAsState()
+    val isActualServerServiceRunning by viewModel.iaActualServerCheckIsRunningStateFlow.collectAsStateWithLifecycle()
+    val lastServerStatus by viewModel.actualServerStatusFlow.collectAsStateWithLifecycle()
+    val lastServerCheckTime by viewModel.actualServerCheckTimeFlow.collectAsStateWithLifecycle()
+    val isWebServerServiceRunning by viewModel.isWebServerCheckIsRunningStateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Главный экран") }) },
-        bottomBar = {
+        topBar = { TopAppBar(title = { Text("Главный экран") }) }, bottomBar = {
             MainScreenButton(
                 text = "Закрыть",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp, start = 8.dp, end = 8.dp),
-                onClick = { onCloseClick.invoke() }
+                    .padding(
+                        bottom = MainScreenPadding,
+                        start = MainScreenPadding,
+                        end = MainScreenPadding
+                    ),
+                onClick = onCloseClicked
             )
         }
     ) { paddingValues ->
@@ -62,7 +63,7 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(MainScreenPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -71,70 +72,118 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 MainScreenButton(
-                    text = "Логи: ${mainScreenDataState.logCount}",
-                    onClick = { onLogsClick.invoke() }
+                    text = "Логи: ${mainScreenData.logCount}",
+                    onClick = onLogsClicked
                 )
-//                MainScreenButton(
-//                    text = "Серверы: ${mainScreenDataState.remoteServerCount}",
-//                    onClick = { /* TODO: Обработка нажатия кнопки "Серверы" */ }
-//                )
                 MainScreenButton(
-                    text = "Товары: ${mainScreenDataState.productCount}",
-                    onClick = { onProductsClick.invoke() }
+                    text = "Товары: ${mainScreenData.productCount}",
+                    onClick = onProductsClicked
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 8.dp)
-                MainScreenButton(
-                    onClick = {
-                        viewModel.startService {
-                            Intent(context, ExternalServerCheckService::class.java).also {
-                                it.action =
-                                    ExternalServerCheckService.ACTION_START_FOREGROUND_SERVICE
-                                context.startService(it)
-                            }
-                        }
-                    },
-                    enabled = !serviceStatus,
-                    text = "Запустить сервис"
-                )
-                MainScreenButton(
-                    onClick = {
-                        viewModel.stopService {
-                            Intent(context, ExternalServerCheckService::class.java).also {
-                                it.action =
-                                    ExternalServerCheckService.ACTION_STOP_FOREGROUND_SERVICE
-                                context.startService(it)
-                            }
-                        }
-                    },
-                    enabled = serviceStatus,
-                    text = "Остановить сервис"
-                )
+                ServiceStatusSection(viewModel, context, isActualServerServiceRunning)
+                LocalServerStatusSection(viewModel, context, isWebServerServiceRunning)
             }
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = MainScreenStatusBottomPadding)
-            ) {
-                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                    Text(
-                        text = "Удаленный сервер:",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(text = "Запущен: $lastStatus -> $lastTime")
-                }
-                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Локальный веб-сервер:",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(text = mainScreenDataState.localWebServerStatus)
-                }
-            }
+            ServerStatusRow(
+                lastServerStatus = lastServerStatus,
+                lastServerCheckTime = lastServerCheckTime,
+                localWebServerStatus = mainScreenData.localWebServerStatus
+            )
         }
     }
 }
+
+@Composable
+private fun ServiceStatusSection(
+    viewModel: MainScreenViewModel,
+    context: Context,
+    isServiceRunning: Boolean
+) {
+    CheckActiveServiceCommands(viewModel, context, isServiceRunning)
+}
+
+@Composable
+private fun LocalServerStatusSection(
+    viewModel: MainScreenViewModel,
+    context: Context,
+    isWebServerServiceRunning: Boolean
+) {
+    LocalServerServiceCommands(viewModel, context, isWebServerServiceRunning)
+}
+
+@Composable
+private fun ServerStatusRow(
+    lastServerStatus: String,
+    lastServerCheckTime: String,
+    localWebServerStatus: String
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = MainScreenStatusBottomPadding)
+    ) {
+        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+            Text(
+                text = "Удаленный сервер:",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(text = "Запущен: $lastServerStatus -> $lastServerCheckTime")
+        }
+        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+            Text(
+                text = "Локальный веб-сервер:",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(text = localWebServerStatus)
+        }
+    }
+}
+
+@Composable
+private fun CheckActiveServiceCommands(
+    viewModel: MainScreenViewModel,
+    context: Context,
+    serviceStatus: Boolean
+) {
+    Row {
+        MainScreenButton(
+            onClick = { viewModel.startCheckServerService(context) },
+            enabled = !serviceStatus,
+            text = "Запустить сервис проверки",
+            modifier = Modifier.weight(1f)
+        )
+        MainScreenButton(
+            onClick = { viewModel.stopCheckServerService(context) },
+            enabled = serviceStatus,
+            text = "Остановить сервис проверки",
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun LocalServerServiceCommands(
+    viewModel: MainScreenViewModel,
+    context: Context,
+    serviceStatus: Boolean
+) {
+    Row {
+        MainScreenButton(
+            onClick = { viewModel.startWebServerService(context) },
+            enabled = !serviceStatus,
+            text = "Запустить веб-сервер",
+            modifier = Modifier.weight(1f)
+        )
+        MainScreenButton(
+            onClick = { viewModel.stopWebServerService(context) },
+            enabled = serviceStatus,
+            text = "Остановить веб-сервер",
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
 
 @Composable
 fun MainScreenButton(

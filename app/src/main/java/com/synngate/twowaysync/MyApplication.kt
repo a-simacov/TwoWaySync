@@ -21,9 +21,6 @@ class MyApplication : Application() {
         appDependencies = AppDependencies
         AppDependencies.init(context = this)
 
-        // Синхронная инициализация LogHelper с использованием runBlocking  <----  ИЗМЕНЕНО НА runBlocking
-        // todo это плохой способ блокирования, но приходится так делать, т.к. он не успевает
-        // инициализироваться, а его уже используют
         applicationScope.launch(Dispatchers.IO) {
             LogHelper.init(appDependencies.provideLogRepository()) // Инициализация LogHelper
             val prefs = appDependencies.dataStore.data.first()

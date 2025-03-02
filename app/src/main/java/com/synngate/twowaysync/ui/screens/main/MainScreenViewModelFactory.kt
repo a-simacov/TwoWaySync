@@ -15,7 +15,8 @@ class MainScreenViewModelFactory(
                 MainScreenViewModel(
                     getMainScreenDataInteractor = getMainScreenDataInteractor,
                     checkServerAvailabilityInteractor = checkServerAvailabilityInteractor,
-                    serverCheckDataStore = serverCheckDataStore
+                    actualServerCheckDataStore = actualServerCheckDataStore,
+                    webServerCheckDataStore = webServerCheckDataStore
                 ) as T
             }
         }

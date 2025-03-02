@@ -85,22 +85,26 @@ fun AppNavGraph() {
         composable("main_screen") { backStackEntry ->
             val mainScreenDependencies = MainScreenDependencies(appDependencies)
             val factory = MainScreenViewModelFactory(mainScreenDependencies)
-            val viewModel: MainScreenViewModel =
-                viewModel(factory = factory, viewModelStoreOwner = backStackEntry)
+            val viewModel: MainScreenViewModel = viewModel(
+                factory = factory,
+                viewModelStoreOwner = backStackEntry
+            )
 
             MainScreen(
                 viewModel = viewModel,
-                onCloseClick = { navController.popBackStack() },
-                onLogsClick = { navController.navigate("logs_screen") },
-                onProductsClick = { navController.navigate("products_screen") }
+                onCloseClicked = { navController.popBackStack() },
+                onLogsClicked = { navController.navigate("logs_screen") },
+                onProductsClicked = { navController.navigate("products_screen") }
             )
         }
 
         composable("logs_screen") { backStackEntry ->
             val logScreenDependencies = LogsScreensDpenedencies(appDependencies)
             val factory = LogsScreenViewModelFactory(logScreenDependencies)
-            val viewModel: LogsScreenViewModel =
-                viewModel(factory = factory, viewModelStoreOwner = backStackEntry)
+            val viewModel: LogsScreenViewModel = viewModel(
+                factory = factory,
+                viewModelStoreOwner = backStackEntry
+            )
             LogsScreen(
                 viewModel = viewModel,
                 onCloseClick = { navController.popBackStack() }
@@ -110,8 +114,10 @@ fun AppNavGraph() {
         composable("products_screen") { backStackEntry ->
             val productsScreenDependencies = ProductsScreensDependencies(appDependencies)
             val factory = ProductsScreenViewModelFactory(productsScreenDependencies)
-            val viewModel: ProductsScreenViewModel =
-                viewModel(factory = factory, viewModelStoreOwner = backStackEntry)
+            val viewModel: ProductsScreenViewModel = viewModel(
+                factory = factory,
+                viewModelStoreOwner = backStackEntry
+            )
             ProductsScreen(
                 viewModel = viewModel,
                 onBackClicked = { navController.popBackStack() }
@@ -166,8 +172,10 @@ fun NavGraphBuilder.serversGraph(
             serversGraphDependencies,
         )
         val serverId = backStackEntry.arguments?.getInt("serverId") ?: -1
-        val viewModel: ExternalServerScreenViewModel =
-            viewModel(factory = factory, viewModelStoreOwner = backStackEntry)
+        val viewModel: ExternalServerScreenViewModel = viewModel(
+            factory = factory,
+            viewModelStoreOwner = backStackEntry
+        )
         ExternalServerScreen(
             viewModel = viewModel,
             serverId = serverId,

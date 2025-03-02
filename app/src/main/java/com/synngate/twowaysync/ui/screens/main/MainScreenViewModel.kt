@@ -1,12 +1,17 @@
 package com.synngate.twowaysync.ui.screens.main
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.synngate.twowaysync.data.common.Result
 import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
 import com.synngate.twowaysync.domain.model.MainScreenData
-import com.synngate.twowaysync.services.ServerCheckDataStore
+import com.synngate.twowaysync.services.ActualServerCheckDataStore
+import com.synngate.twowaysync.services.ExternalServerCheckService
+import com.synngate.twowaysync.services.LocalServerService
+import com.synngate.twowaysync.services.WebServerCheckDataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +24,8 @@ import kotlinx.coroutines.launch
 class MainScreenViewModel(
     private val getMainScreenDataInteractor: GetMainScreenDataInteractor,
     private val checkServerAvailabilityInteractor: CheckServerAvailabilityInteractor,
-    private val serverCheckDataStore: ServerCheckDataStore
+    private val actualServerCheckDataStore: ActualServerCheckDataStore,
+    private val webServerCheckDataStore: WebServerCheckDataStore
 ) : ViewModel() {
 
     private val initialMainScreenData = MainScreenData(
@@ -33,12 +39,15 @@ class MainScreenViewModel(
     private val _mainScreenDataState = MutableStateFlow(initialMainScreenData)
     val mainScreenDataState: StateFlow<MainScreenData> = _mainScreenDataState.asStateFlow()
 
-    val serviceRunningStateFlow: StateFlow<Boolean> =
-        serverCheckDataStore.serviceRunningStateFlow.stateInViewModel(false)
-    val serverStatusFlow: StateFlow<String> =
-        serverCheckDataStore.serverStatusFlow.stateInViewModel("Ожидание проверки")
-    val serverCheckTimeFlow: StateFlow<String> =
-        serverCheckDataStore.serverCheckTimeFlow.stateInViewModel("Нет данных")
+    val iaActualServerCheckIsRunningStateFlow: StateFlow<Boolean> =
+        actualServerCheckDataStore.serviceRunningStateFlow.stateInViewModel(false)
+    val actualServerStatusFlow: StateFlow<String> =
+        actualServerCheckDataStore.serverStatusFlow.stateInViewModel("Ожидание проверки")
+    val actualServerCheckTimeFlow: StateFlow<String> =
+        actualServerCheckDataStore.serverCheckTimeFlow.stateInViewModel("Нет данных")
+
+    val isWebServerCheckIsRunningStateFlow: StateFlow<Boolean> =
+        webServerCheckDataStore.serviceRunningStateFlow.stateInViewModel(false)
 
 
     init {
@@ -62,20 +71,35 @@ class MainScreenViewModel(
                     )
                 }
             }
+            //webServerCheckDataStore.saveServiceRunningState(false)
         }
     }
 
-    fun startService(startServiceAction: () -> Unit) {
-        startServiceAction()
-        viewModelScope.launch(Dispatchers.IO) {
-            serverCheckDataStore.saveServiceRunningState(true)
+    fun startCheckServerService(context: Context) {
+        Intent(context, ExternalServerCheckService::class.java).also {
+            it.action = ExternalServerCheckService.ACTION_START_FOREGROUND_SERVICE
+            context.startForegroundService(it)
         }
     }
 
-    fun stopService(stopServiceAction: () -> Unit) {
-        stopServiceAction()
-        viewModelScope.launch(Dispatchers.IO) {
-            serverCheckDataStore.saveServiceRunningState(false)
+    fun stopCheckServerService(context: Context) {
+        Intent(context, ExternalServerCheckService::class.java).also {
+            it.action = ExternalServerCheckService.ACTION_STOP_FOREGROUND_SERVICE
+            context.startForegroundService(it)
+        }
+    }
+
+    fun startWebServerService(context: Context) {
+        Intent(context, LocalServerService::class.java).also {
+            it.action = LocalServerService.ACTION_START_FOREGROUND_SERVICE
+            context.startForegroundService(it)
+        }
+    }
+
+    fun stopWebServerService(context: Context) {
+        Intent(context, LocalServerService::class.java).also {
+            it.action = LocalServerService.ACTION_STOP_FOREGROUND_SERVICE
+            context.startForegroundService(it)
         }
     }
 

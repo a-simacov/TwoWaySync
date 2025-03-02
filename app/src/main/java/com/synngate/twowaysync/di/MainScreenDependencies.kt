@@ -4,7 +4,8 @@ import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInterac
 import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
 import com.synngate.twowaysync.domain.interactors.impl.CheckServerAvailabilityInteractorImpl
 import com.synngate.twowaysync.domain.interactors.impl.GetMainScreenDataInteractorImpl
-import com.synngate.twowaysync.services.ServerCheckDataStore
+import com.synngate.twowaysync.services.ActualServerCheckDataStore
+import com.synngate.twowaysync.services.WebServerCheckDataStore
 
 class MainScreenDependencies(
     private val appDependencies: AppDependencies
@@ -26,7 +27,9 @@ class MainScreenDependencies(
         }
     }
 
-    val serverCheckDataStore = ServerCheckDataStore(dataStore = AppDependencies.dataStore)
+    val actualServerCheckDataStore =
+        ActualServerCheckDataStore(dataStore = AppDependencies.dataStore)
+    val webServerCheckDataStore = WebServerCheckDataStore(dataStore = AppDependencies.dataStore)
 
     fun clear() {
 

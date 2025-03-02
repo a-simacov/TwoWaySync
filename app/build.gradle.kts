@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     id("kotlin-kapt")
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 android {
@@ -45,7 +46,14 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes.addAll(
+                listOf(
+                    "META-INF/INDEX.LIST",
+                    "META-INF/io.netty.versions.properties",
+                    "META-INF/AL2.0",
+                    "META-INF/LGPL2.1"
+                )
+            )
         }
     }
 }
@@ -81,6 +89,18 @@ dependencies {
 
     // Testing support for Room (если вы будете писать тесты для Room) - опционально, для тестов
     testImplementation("androidx.room:room-testing:2.6.1")   // Замените "2.6.1" на последнюю версию, если нужны тесты
+
+    // Ktor local web-server
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.cors)
+    implementation("io.ktor:ktor-server-status-pages:2.3.10")
+    implementation("io.ktor:ktor-server-request-validation:2.3.10")
+    implementation("io.ktor:ktor-server-call-logging:2.3.10")
+    implementation("ch.qos.logback:logback-classic:1.4.14")
 
 
     implementation(libs.androidx.core.ktx)

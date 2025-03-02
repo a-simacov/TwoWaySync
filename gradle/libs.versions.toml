@@ -10,6 +10,13 @@ activityCompose = "1.10.0"
 composeBom = "2024.04.01"
 workRuntimeKtx = "2.10.0"
 
+ktorSerializationKotlinxJson = "2.3.10"
+ktorServerContentNegotiation = "2.3.10"
+ktorServerCore = "2.3.12"
+ktorServerCors = "2.3.10"
+ktorClientContentNegotiation = "2.3.10"
+ktorServerNetty = "2.3.10"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -26,6 +33,13 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktorServerCore" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktorServerCors" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktorServerContentNegotiation" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktorServerNetty" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
