@@ -1,9 +1,9 @@
 package com.synngate.twowaysync.di
 
-import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
-import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
-import com.synngate.twowaysync.domain.interactors.impl.CheckServerAvailabilityInteractorImpl
-import com.synngate.twowaysync.domain.interactors.impl.GetMainScreenDataInteractorImpl
+import com.synngate.twowaysync.domain.interactors.GetLogsCountInteractor
+import com.synngate.twowaysync.domain.interactors.GetProductsCountInteractor
+import com.synngate.twowaysync.domain.interactors.impl.GetLogsCountInteractorImpl
+import com.synngate.twowaysync.domain.interactors.impl.GetProductsCountInteractorImpl
 import com.synngate.twowaysync.services.ActualServerCheckDataStore
 import com.synngate.twowaysync.services.WebServerCheckDataStore
 
@@ -11,20 +11,12 @@ class MainScreenDependencies(
     private val appDependencies: AppDependencies
 ) {
 
-    val checkServerAvailabilityInteractor: CheckServerAvailabilityInteractor by lazy {
-        CheckServerAvailabilityInteractorImpl()
+    val getLogsCountInteractor: GetLogsCountInteractor by lazy {
+        GetLogsCountInteractorImpl(appDependencies.logRepository)
     }
 
-    val getMainScreenDataInteractor: GetMainScreenDataInteractor by lazy {
-        with(appDependencies) {
-            GetMainScreenDataInteractorImpl(
-                logRepository,
-                externalServerRepository,
-                productRepository,
-                remoteServerConnectionManager,
-                localWebServerService
-            )
-        }
+    val getProductsCountInteractor: GetProductsCountInteractor by lazy {
+        GetProductsCountInteractorImpl(appDependencies.productRepository)
     }
 
     val actualServerCheckDataStore =

@@ -43,12 +43,7 @@ class LogLocalDataSourceImpl(
         }
     }
 
-    override suspend fun getLogsCount(): Result<Int> {
-        val count = withContext(Dispatchers.IO) {
-            logDao.getLogsCount()
-        }
-        return Result.Success(count)
-    }
+    override fun getLogsCount() = logDao.getLogsCount()
 
     override suspend fun deleteAll() {
         logDao.deleteAll()

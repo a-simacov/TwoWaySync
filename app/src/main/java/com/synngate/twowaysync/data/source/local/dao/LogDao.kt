@@ -30,7 +30,7 @@ interface LogDao {
     suspend fun insert(log: LogDetailsEntity)
 
     @Query("SELECT COUNT(*) FROM logs")
-    suspend fun getLogsCount(): Int
+    fun getLogsCount(): Flow<Int>
 
     @Query("DELETE FROM logs")
     suspend fun deleteAll()

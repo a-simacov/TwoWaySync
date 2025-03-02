@@ -17,7 +17,7 @@ class LogRepositoryImpl(private val logLocalDataSource: LogLocalDataSource) : Lo
         return logLocalDataSource.insertLog(logDetails)
     }
 
-    override suspend fun getLogsCount(): Result<Int> {
+    override fun getLogsCount(): Flow<Int> {
         return logLocalDataSource.getLogsCount()
     }
 

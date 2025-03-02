@@ -20,14 +20,11 @@ class GetMainScreenDataInteractorImpl(
     override suspend fun invoke(): Result<MainScreenData> {
         return try {
             val logCountResult = logRepository.getLogsCount()
-            val logCount = when (logCountResult) {
-                is Result.Success -> logCountResult.data
-                is Result.Failure -> 0
-            }
+            val logCount = 0
 
             val remoteServerCount = 0
 
-            val productCount = productRepository.getProductsCount()
+            val productCount = 0//productRepository.getProductsCount()
 
             val webServerStatus = localWebServerService.getWebServerStatus()
             val remoteServerStatus = remoteServerConnectionManager.getRemoteServerStatus()

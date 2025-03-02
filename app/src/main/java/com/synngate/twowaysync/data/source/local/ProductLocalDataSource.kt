@@ -6,7 +6,10 @@ import kotlinx.coroutines.flow.Flow
 interface ProductLocalDataSource {
 
     fun getProducts(): Flow<List<ProductDetails>>
+
     suspend fun insertProducts(products: List<ProductDetails>)
-    suspend fun getProductsCount(): Int
+
+    fun getProductsCount(): Flow<Int>
+
     suspend fun deleteAll()
 }

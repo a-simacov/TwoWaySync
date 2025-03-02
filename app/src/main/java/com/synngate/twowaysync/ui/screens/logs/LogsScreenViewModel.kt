@@ -9,6 +9,7 @@ import com.synngate.twowaysync.domain.interactors.GetLogsInteractor
 import com.synngate.twowaysync.domain.model.LogDetails
 import com.synngate.twowaysync.util.LogHelper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +35,7 @@ class LogsScreenViewModel(
         loadLogs()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun loadLogs() {
         viewModelScope.launch(Dispatchers.IO) {
             _filter // Используем StateFlow фильтра как источник

@@ -13,7 +13,7 @@ interface ProductDao {
     fun getAllProducts(): Flow<List<ProductDetailsEntity>>
 
     @Query("SELECT COUNT(*) FROM products")
-    suspend fun getProductsCount(): Int
+    fun getProductsCount(): Flow<Int>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProducts(products: List<ProductDetailsEntity>)

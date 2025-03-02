@@ -16,7 +16,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +36,8 @@ fun MainScreen(
     onLogsClicked: () -> Unit,
     onProductsClicked: () -> Unit
 ) {
-    val mainScreenData by viewModel.mainScreenDataState.collectAsState()
+    val productsCount by viewModel.productsCount.collectAsStateWithLifecycle()
+    val logsCount by viewModel.logsCount.collectAsStateWithLifecycle()
     val isActualServerServiceRunning by viewModel.iaActualServerCheckIsRunningStateFlow.collectAsStateWithLifecycle()
     val lastServerStatus by viewModel.actualServerStatusFlow.collectAsStateWithLifecycle()
     val lastServerCheckTime by viewModel.actualServerCheckTimeFlow.collectAsStateWithLifecycle()
@@ -72,11 +72,11 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 MainScreenButton(
-                    text = "Логи: ${mainScreenData.logCount}",
+                    text = "Логи: $logsCount",
                     onClick = onLogsClicked
                 )
                 MainScreenButton(
-                    text = "Товары: ${mainScreenData.productCount}",
+                    text = "Товары: $productsCount",
                     onClick = onProductsClicked
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 8.dp)
@@ -87,7 +87,7 @@ fun MainScreen(
             ServerStatusRow(
                 lastServerStatus = lastServerStatus,
                 lastServerCheckTime = lastServerCheckTime,
-                localWebServerStatus = mainScreenData.localWebServerStatus
+                //localWebServerStatus = mainScreenData.localWebServerStatus
             )
         }
     }
@@ -115,7 +115,7 @@ private fun LocalServerStatusSection(
 private fun ServerStatusRow(
     lastServerStatus: String,
     lastServerCheckTime: String,
-    localWebServerStatus: String
+    //localWebServerStatus: String
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -135,7 +135,7 @@ private fun ServerStatusRow(
                 text = "Локальный веб-сервер:",
                 style = MaterialTheme.typography.titleMedium
             )
-            Text(text = localWebServerStatus)
+            Text(text = "TODO")
         }
     }
 }

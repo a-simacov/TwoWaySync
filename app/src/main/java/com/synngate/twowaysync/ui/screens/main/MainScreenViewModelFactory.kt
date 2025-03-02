@@ -13,8 +13,8 @@ class MainScreenViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return with(mainScreenDependencies) {
                 MainScreenViewModel(
-                    getMainScreenDataInteractor = getMainScreenDataInteractor,
-                    checkServerAvailabilityInteractor = checkServerAvailabilityInteractor,
+                    getLogsCountInteractor = getLogsCountInteractor,
+                    getProductsCountInteractor = getProductsCountInteractor,
                     actualServerCheckDataStore = actualServerCheckDataStore,
                     webServerCheckDataStore = webServerCheckDataStore
                 ) as T

@@ -4,10 +4,8 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.synngate.twowaysync.data.common.Result
-import com.synngate.twowaysync.domain.interactors.CheckServerAvailabilityInteractor
-import com.synngate.twowaysync.domain.interactors.GetMainScreenDataInteractor
-import com.synngate.twowaysync.domain.model.MainScreenData
+import com.synngate.twowaysync.domain.interactors.GetLogsCountInteractor
+import com.synngate.twowaysync.domain.interactors.GetProductsCountInteractor
 import com.synngate.twowaysync.services.ActualServerCheckDataStore
 import com.synngate.twowaysync.services.ExternalServerCheckService
 import com.synngate.twowaysync.services.LocalServerService
@@ -18,26 +16,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainScreenViewModel(
-    private val getMainScreenDataInteractor: GetMainScreenDataInteractor,
-    private val checkServerAvailabilityInteractor: CheckServerAvailabilityInteractor,
+    private val getLogsCountInteractor: GetLogsCountInteractor,
+    private val getProductsCountInteractor: GetProductsCountInteractor,
     private val actualServerCheckDataStore: ActualServerCheckDataStore,
     private val webServerCheckDataStore: WebServerCheckDataStore
 ) : ViewModel() {
 
-    private val initialMainScreenData = MainScreenData(
-        logCount = 0,
-        remoteServerCount = 0,
-        productCount = 0,
-        localWebServerStatus = "Загрузка...",
-        remoteServerStatus = "Загрузка..."
-    )
+    private val _logsCount = MutableStateFlow(0)
+    val logsCount: StateFlow<Int> = _logsCount.asStateFlow()
 
-    private val _mainScreenDataState = MutableStateFlow(initialMainScreenData)
-    val mainScreenDataState: StateFlow<MainScreenData> = _mainScreenDataState.asStateFlow()
+    private val _productsCount = MutableStateFlow(0)
+    val productsCount: StateFlow<Int> = _productsCount.asStateFlow()
 
     val iaActualServerCheckIsRunningStateFlow: StateFlow<Boolean> =
         actualServerCheckDataStore.serviceRunningStateFlow.stateInViewModel(false)
@@ -56,21 +50,15 @@ class MainScreenViewModel(
 
     private fun loadMainScreenData() {
         viewModelScope.launch(Dispatchers.IO) {
-            val result = getMainScreenDataInteractor.invoke()
-            when (result) {
-                is Result.Success -> {
-                    _mainScreenDataState.value = result.data
-                }
-                is Result.Failure -> {
-                    _mainScreenDataState.value = MainScreenData(
-                        logCount = 0,
-                        remoteServerCount = 0,
-                        productCount = 0,
-                        localWebServerStatus = "Ошибка загрузки",
-                        remoteServerStatus = "Ошибка загрузки"
-                    )
-                }
+            getLogsCountInteractor.execute().collectLatest { count ->
+                _logsCount.value = count
             }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            getProductsCountInteractor.execute().collectLatest { count ->
+                _productsCount.value = count
+            }
+
             //webServerCheckDataStore.saveServiceRunningState(false)
         }
     }

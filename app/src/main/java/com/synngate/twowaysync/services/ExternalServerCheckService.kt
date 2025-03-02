@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import com.synngate.twowaysync.MyApplication
 import com.synngate.twowaysync.R
 import com.synngate.twowaysync.di.AppDependencies
+import com.synngate.twowaysync.util.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -197,6 +198,7 @@ class ExternalServerCheckService : Service() {
             actualServerCheckDataStore.saveServerCheckTime(currentTime)
         }
         updateNotification(statusInfo, currentTime)
+        LogHelper.log(statusInfo)
     }
 
     private fun updateNotification(status: String, time: String) {
