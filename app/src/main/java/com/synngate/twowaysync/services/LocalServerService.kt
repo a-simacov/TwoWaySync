@@ -7,6 +7,8 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -45,11 +47,15 @@ class LocalServerService : Service() {
 
     private lateinit var serverStateFlow: StateFlow<String>
 
+    private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var networkCallback: ConnectivityManager.NetworkCallback
+
     override fun onCreate() {
         super.onCreate()
         val appDependencies = (application as MyApplication).appDependencies
         val dataStore = appDependencies.dataStore
         webServerCheckDataStore = WebServerCheckDataStore(dataStore)
+        registerNetworkCallback()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -90,7 +96,7 @@ class LocalServerService : Service() {
         //checkServerStatus()
     }
 
-    fun initServer() {
+    private fun initServer() {
         serviceScope.launch {
             try {
                 server = KtorDeviceServer(this@LocalServerService)
@@ -181,7 +187,7 @@ class LocalServerService : Service() {
             .addAction(R.drawable.ic_stop, "Остановить", stopPendingIntent)
             .addAction(
                 R.drawable.outline_confirmation_number_24,
-                "Перезапустить веб-сервер",
+                "Перезапустить",
                 restartServerPendingIntent
             )
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -216,7 +222,29 @@ class LocalServerService : Service() {
             webServerCheckDataStore.saveServiceRunningState(false)
         }
         serviceScope.cancel()
+        unregisterNetworkCallback()
         super.onDestroy()
+    }
+
+    private fun registerNetworkCallback() {
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                super.onAvailable(network)
+                restartServer()
+            }
+
+            override fun onLost(network: Network) {
+                super.onLost(network)
+                stopServer()
+            }
+        }
+
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        connectivityManager.registerDefaultNetworkCallback(networkCallback)
+    }
+
+    private fun unregisterNetworkCallback() {
+        connectivityManager.unregisterNetworkCallback(networkCallback)
     }
 
     private fun startServer() {
