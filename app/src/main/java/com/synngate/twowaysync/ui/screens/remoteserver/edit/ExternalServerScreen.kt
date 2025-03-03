@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synngate.twowaysync.R
 import com.synngate.twowaysync.ui.screens.main.MainScreenButton
 
@@ -35,6 +38,22 @@ fun ExternalServerScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
+
+    val showDeleteConfirmationDialog by viewModel.showDeleteConfirmationDialog.collectAsStateWithLifecycle()
+    val isServerDeleted by viewModel.isServerDeleted.collectAsStateWithLifecycle()
+
+    if (showDeleteConfirmationDialog) {
+        DeleteConfirmationDialog(
+            onDismiss = viewModel::onDismissDeleteConfirmationDialog,
+            onConfirm = viewModel::onDeleteConfirmed
+        )
+    }
+
+    LaunchedEffect(key1 = isServerDeleted) {
+        if (isServerDeleted) {
+            onClickDelete()
+        }
+    }
 
     LaunchedEffect(serverId) {
         viewModel.load(serverId)
@@ -119,8 +138,7 @@ fun ExternalServerScreen(
                 text = "Удалить",
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    viewModel.delete()
-                    onClickDelete()
+                    viewModel.onShowDeleteConfirmationDialog()
                 }
             )
             HorizontalDivider(
@@ -143,6 +161,28 @@ fun ExternalServerScreen(
             )
         }
     }
+}
+
+@Composable
+fun DeleteConfirmationDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Подтверждение удаления") },
+        text = { Text("Вы уверены, что хотите удалить сервер?") },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Удалить")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
+    )
 }
 
 interface ActiveServerButton {

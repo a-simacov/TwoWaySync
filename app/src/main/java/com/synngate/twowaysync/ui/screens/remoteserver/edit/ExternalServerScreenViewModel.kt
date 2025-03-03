@@ -34,6 +34,29 @@ class ExternalServerScreenViewModel(
     private val _connectionStatus = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Idle)
     val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus.asStateFlow()
 
+    private val _showDeleteConfirmationDialog = MutableStateFlow(false)
+    val showDeleteConfirmationDialog: StateFlow<Boolean> =
+        _showDeleteConfirmationDialog.asStateFlow()
+
+    private val _isServerDeleted = MutableStateFlow(false)
+    val isServerDeleted: StateFlow<Boolean> = _isServerDeleted.asStateFlow()
+
+    fun onShowDeleteConfirmationDialog() {
+        _showDeleteConfirmationDialog.value = true
+    }
+
+    fun onDismissDeleteConfirmationDialog() {
+        _showDeleteConfirmationDialog.value = false
+    }
+
+    fun onDeleteConfirmed() {
+        viewModelScope.launch {
+            deleteExternalServerInteractor.execute(currentServer)
+            _isServerDeleted.value = true
+        }
+        onDismissDeleteConfirmationDialog()
+    }
+
     fun updateName(name: String) {
         updateUiState { currentState ->
             currentState.copy(
@@ -110,7 +133,7 @@ class ExternalServerScreenViewModel(
     }
 
     fun delete() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             deleteExternalServerInteractor.execute(currentServer)
         }
     }
