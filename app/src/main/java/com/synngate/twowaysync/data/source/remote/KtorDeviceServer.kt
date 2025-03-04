@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
+import java.net.ServerSocket
 
 class KtorDeviceServer(private val context: Context) {
 
@@ -70,7 +71,7 @@ class KtorDeviceServer(private val context: Context) {
         )
 
     private val server: ApplicationEngine by lazy {
-        embeddedServer(Netty, DEFAULT_PORT) {
+        embeddedServer(Netty, DEFAULT_PORT) { // Если указать порт = 0, то он будет выбран автоматом
             environment.monitor.subscribe(ApplicationStarted) {
                 isStarted = true
                 _serverState.value = "Сервер запущен $host"
@@ -92,7 +93,7 @@ class KtorDeviceServer(private val context: Context) {
         get() = String.format("%s:%d", NetworkUtils.getLocalIpAddress(), DEFAULT_PORT)
 
     fun startServer() {
-        if (!isRunning) {
+        if (!isRunning && isPortAvailable(DEFAULT_PORT)) {
             try {
                 lastError = null
                 server.start(wait = false)
@@ -102,13 +103,22 @@ class KtorDeviceServer(private val context: Context) {
                 isRunning = false
                 _serverState.value = "Ошибка запуска сервера: ${e.message}"
             }
-        }
+        } else
+            _serverState.value = "Порт $DEFAULT_PORT занят"
     }
 
     fun stopServer() {
         if (isRunning) {
             server.stop(SHUTDOWN_GRACE_PERIOD_MS, SHUTDOWN_TIMEOUT_MS)
             isRunning = false
+        }
+    }
+
+    private fun isPortAvailable(port: Int): Boolean {
+        return try {
+            ServerSocket(port).use { true }
+        } catch (e: Exception) {
+            false
         }
     }
 
