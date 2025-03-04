@@ -1,5 +1,10 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.edit
 
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.synngate.twowaysync.domain.interactors.CheckActiveServerInteractor
@@ -9,6 +14,7 @@ import com.synngate.twowaysync.domain.interactors.GetExternalServerInteractor
 import com.synngate.twowaysync.domain.interactors.SaveExternalServerInteractor
 import com.synngate.twowaysync.domain.interactors.UpdateActiveServerInteractor
 import com.synngate.twowaysync.domain.model.ExternalServer
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -55,10 +61,6 @@ class ExternalServerScreenViewModel(
     }
 
     fun onDeleteConfirmed() {
-//        viewModelScope.launch {
-//            deleteExternalServerInteractor.execute(currentServer)
-//            _isServerDeleted.value = true
-//        }
         delete()
         onDismissDeleteConfirmationDialog()
     }
@@ -144,7 +146,7 @@ class ExternalServerScreenViewModel(
     fun delete() {
         viewModelScope.launch {
             deleteExternalServerInteractor.execute(currentServer)
-            _events.send(ExternalServerEvent.DeleteSuccess("Сервер удален успешно", currentServer))
+            _events.send(ExternalServerEvent.DeleteSuccess("Сервер удален успешно"))
         }
     }
 
@@ -152,7 +154,7 @@ class ExternalServerScreenViewModel(
         _isServerDeleted.value = true
     }
 
-    fun undoDelete(deleted: ExternalServer) {
+    fun undoDelete() {
         viewModelScope.launch {
             save()
         }
@@ -207,14 +209,55 @@ class ExternalServerScreenViewModel(
         "Активный: ${if (isActive) "ДА" else "НЕТ"}"
 }
 
-sealed class ExternalServerEvent {
+interface ExternalServerEvent {
 
-    data class SaveSuccess(val message: String) : ExternalServerEvent()
+    fun show(context: Context)
 
-    data class Error(val message: String) : ExternalServerEvent()
+    fun showSnackbar(
+        context: Context,
+        snackbarHostState: SnackbarHostState,
+        coroutineScope: CoroutineScope,
+        actionLabel: String,
+        onActionPerformed: () -> Unit,
+        onActionDismissed: () -> Unit
+    )
 
-    data class DeleteSuccess(val message: String, val deletedServer: ExternalServer) :
-        ExternalServerEvent()
+    abstract class Abstract(
+        protected val message: String
+    ) : ExternalServerEvent {
+
+        override fun show(context: Context) {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+
+        override fun showSnackbar(
+            context: Context,
+            snackbarHostState: SnackbarHostState,
+            coroutineScope: CoroutineScope,
+            actionLabel: String,
+            onActionPerformed: () -> Unit,
+            onActionDismissed: () -> Unit
+        ) {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    actionLabel = actionLabel,
+                    duration = SnackbarDuration.Long
+                ).let { result ->
+                    if (result == SnackbarResult.ActionPerformed) {
+                        onActionPerformed.invoke()
+                    } else
+                        onActionDismissed.invoke()
+                }
+            }
+        }
+    }
+
+    class SaveSuccess(message: String) : Abstract(message)
+
+    class Error(message: String) : Abstract(message)
+
+    class DeleteSuccess(message: String) : Abstract(message)
 }
 
 sealed class ConnectionStatus(val text: String) {

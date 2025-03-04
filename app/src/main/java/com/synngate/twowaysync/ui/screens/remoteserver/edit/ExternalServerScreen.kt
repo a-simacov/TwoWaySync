@@ -1,6 +1,5 @@
 package com.synngate.twowaysync.ui.screens.remoteserver.edit
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,10 +12,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -34,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synngate.twowaysync.R
 import com.synngate.twowaysync.ui.screens.main.MainScreenButton
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,33 +92,19 @@ fun ExternalServerScreen(
         )
     }
 
-    // Обработка одноразовых событий
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
-            when (event) {
-                is ExternalServerEvent.SaveSuccess -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
-                }
-
-                is ExternalServerEvent.Error -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
-                }
-
-                is ExternalServerEvent.DeleteSuccess -> {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = event.message,
-                            actionLabel = "Отменить удаление",
-                            duration = SnackbarDuration.Long
-                        ).let { result ->
-                            if (result == SnackbarResult.ActionPerformed) {
-                                viewModel.undoDelete(event.deletedServer)
-                            } else
-                                viewModel.serverDeleted()
-                        }
-                    }
-                }
-            }
+            if (event is ExternalServerEvent.DeleteSuccess)
+                event.showSnackbar(
+                    context = context,
+                    snackbarHostState = snackbarHostState,
+                    coroutineScope = coroutineScope,
+                    actionLabel = "Отменить удаление",
+                    onActionPerformed = { viewModel.undoDelete() },
+                    onActionDismissed = { viewModel.serverDeleted() }
+                )
+            else
+                event.show(context)
         }
     }
 
@@ -137,13 +119,14 @@ fun ExternalServerScreen(
     }
 }
 
-abstract class UiComponent(protected val viewModel: ExternalServerScreenViewModel) {
+private abstract class UiComponent(protected val viewModel: ExternalServerScreenViewModel) {
 
     @Composable
     abstract fun Render(state: ExternalServerUiState, modifier: Modifier)
 }
 
-class ExternalServerFields(viewModel: ExternalServerScreenViewModel) : UiComponent(viewModel) {
+private class ExternalServerFields(viewModel: ExternalServerScreenViewModel) :
+    UiComponent(viewModel) {
 
     @Composable
     override fun Render(state: ExternalServerUiState, modifier: Modifier) {
@@ -177,7 +160,7 @@ class ExternalServerFields(viewModel: ExternalServerScreenViewModel) : UiCompone
 }
 
 @Composable
-fun ServerTextField(
+private fun ServerTextField(
     value: String,
     error: String,
     label: String,
@@ -203,7 +186,8 @@ fun ServerTextField(
     )
 }
 
-class ExternalServerActions(viewModel: ExternalServerScreenViewModel) : UiComponent(viewModel) {
+private class ExternalServerActions(viewModel: ExternalServerScreenViewModel) :
+    UiComponent(viewModel) {
 
     @Composable
     override fun Render(state: ExternalServerUiState, modifier: Modifier) {
@@ -243,7 +227,7 @@ class ExternalServerActions(viewModel: ExternalServerScreenViewModel) : UiCompon
 }
 
 @Composable
-fun DeleteConfirmationDialog(
+private fun DeleteConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
