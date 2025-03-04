@@ -10,10 +10,12 @@ import com.synngate.twowaysync.domain.interactors.SaveExternalServerInteractor
 import com.synngate.twowaysync.domain.interactors.UpdateActiveServerInteractor
 import com.synngate.twowaysync.domain.model.ExternalServer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -30,6 +32,9 @@ class ExternalServerScreenViewModel(
 
     private val _uiState = MutableStateFlow(ExternalServerUiState())
     val uiState: StateFlow<ExternalServerUiState> = _uiState.asStateFlow()
+
+    private val _events = Channel<ExternalServerEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
     private val _connectionStatus = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Idle)
     val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus.asStateFlow()
@@ -50,10 +55,11 @@ class ExternalServerScreenViewModel(
     }
 
     fun onDeleteConfirmed() {
-        viewModelScope.launch {
-            deleteExternalServerInteractor.execute(currentServer)
-            _isServerDeleted.value = true
-        }
+//        viewModelScope.launch {
+//            deleteExternalServerInteractor.execute(currentServer)
+//            _isServerDeleted.value = true
+//        }
+        delete()
         onDismissDeleteConfirmationDialog()
     }
 
@@ -104,6 +110,9 @@ class ExternalServerScreenViewModel(
 
                 val serverId = saveExternalServerInteractor.execute(serverToSave)
                 updateUiState { it.copy(id = serverId) }
+                _events.send(ExternalServerEvent.SaveSuccess("Сервер записан успешно"))
+            } else {
+                _events.send(ExternalServerEvent.Error("Ошибка в заполнении свойств сервера"))
             }
         }
     }
@@ -135,6 +144,17 @@ class ExternalServerScreenViewModel(
     fun delete() {
         viewModelScope.launch {
             deleteExternalServerInteractor.execute(currentServer)
+            _events.send(ExternalServerEvent.DeleteSuccess("Сервер удален успешно", currentServer))
+        }
+    }
+
+    fun serverDeleted() {
+        _isServerDeleted.value = true
+    }
+
+    fun undoDelete(deleted: ExternalServer) {
+        viewModelScope.launch {
+            save()
         }
     }
 
@@ -185,6 +205,16 @@ class ExternalServerScreenViewModel(
 
     private fun getActiveStatusText(isActive: Boolean): String =
         "Активный: ${if (isActive) "ДА" else "НЕТ"}"
+}
+
+sealed class ExternalServerEvent {
+
+    data class SaveSuccess(val message: String) : ExternalServerEvent()
+
+    data class Error(val message: String) : ExternalServerEvent()
+
+    data class DeleteSuccess(val message: String, val deletedServer: ExternalServer) :
+        ExternalServerEvent()
 }
 
 sealed class ConnectionStatus(val text: String) {
