@@ -1,14 +1,23 @@
 package com.synngate.twowaysync.ui
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
@@ -63,7 +72,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavGraph()
+                    val navController = rememberNavController()
+                    AppNavGraph(navController = navController)
                 }
             }
         }
@@ -71,9 +81,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(navController: NavHostController) {
     val context = LocalContext.current
-    val navController = rememberNavController()
     val appDependencies = (context.applicationContext as MyApplication).appDependencies
 
     NavHost(navController = navController, startDestination = "servers_graph") {
@@ -134,12 +143,23 @@ fun NavGraphBuilder.serversGraph(
 
     composable("servers_screen") { backStackEntry ->
         val serversGraphDependencies = ServersGraphDependencies(appDependencies)
+        var showExitDialog by rememberSaveable { mutableStateOf(false) }
+
+        BackHandler(enabled = navController.currentBackStackEntry?.destination?.route == "servers_screen") {
+            val currentRoute = navController.currentBackStackEntry?.destination?.route
+            println("Current route: $currentRoute")
+            if (currentRoute?.startsWith("servers_screen") == true || currentRoute == "servers_graph") {
+                showExitDialog = true
+            }
+        }
 
         DisposableEffect(Unit) {
             onDispose {
                 serversGraphDependencies.clear()
             }
         }
+
+        val activity = (LocalContext.current as Activity)
 
         val factory = ExternalServersScreenViewModelFactory(
             serversGraphDependencies.getExternalServersInteractor,
@@ -154,6 +174,28 @@ fun NavGraphBuilder.serversGraph(
             onNewItemClick = { navController.navigate("server_screen/-1") },
             onServerItemClick = { navController.navigate("server_screen/$it") }
         )
+
+        if (showExitDialog) {
+            AlertDialog(
+                onDismissRequest = { showExitDialog = false },
+                title = { Text("Выход из приложения") },
+                text = { Text("Вы действительно хотите выйти?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showExitDialog = false
+                        activity.finish()
+                    }) {
+                        Text("Да")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showExitDialog = false }) {
+                        Text("Нет")
+                    }
+                }
+            )
+        }
+
     }
 
     composable(
